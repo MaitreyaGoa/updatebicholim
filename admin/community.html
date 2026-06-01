@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Community Submissions · Update Bicholim</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* Reuses admin styles — this is the Community Approvals module */
+:root{--red:#BB1919;--black:#0A0A0A;--green:#1a7a3a;--gold:#f5a623;--gray-700:#444;--gray-500:#777;--gray-300:#ccc;--gray-100:#f0f0f0;--gray-50:#f8f8f8;--white:#fff;--font:'IBM Plex Sans',sans-serif;--font-d:'Playfair Display',serif;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--gray-50);color:var(--black);}
+
+.page-header{background:var(--black);color:white;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+.page-title{font-family:var(--font-d);font-size:20px;font-weight:700;}
+.page-title span{color:var(--red);}
+.back-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);padding:6px 14px;font-family:var(--font);font-size:12px;cursor:pointer;border-radius:2px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.back-btn:hover{background:rgba(255,255,255,0.14);color:white;}
+
+.container{max-width:1200px;margin:0 auto;padding:28px 20px;}
+
+.filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:24px;background:white;padding:14px 20px;border:1px solid var(--gray-100);}
+.filter-bar select,.filter-bar input{border:1px solid var(--gray-300);padding:7px 12px;font-family:var(--font);font-size:13px;border-radius:2px;outline:none;background:white;}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--red);}
+.filter-label{font-size:12px;font-weight:600;color:var(--gray-500);letter-spacing:0.06em;text-transform:uppercase;}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:white;border:1px solid var(--gray-100);padding:18px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.stat-card.pending::before{background:var(--gold);}
+.stat-card.approved::before{background:var(--green);}
+.stat-card.rejected::before{background:#dc3545;}
+.stat-card.total::before{background:var(--red);}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;}
+.stat-value{font-family:var(--font-d);font-size:28px;font-weight:700;line-height:1;}
+
+.submissions-grid{display:flex;flex-direction:column;gap:14px;}
+.sub-card{background:white;border:1px solid var(--gray-100);border-left:4px solid var(--gray-300);overflow:hidden;}
+.sub-card.pending{border-left-color:var(--gold);}
+.sub-card.approved{border-left-color:var(--green);}
+.sub-card.rejected{border-left-color:#dc3545;}
+.sub-top{display:flex;gap:0;}
+.sub-selfie-col{width:100px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:16px;background:var(--gray-50);border-right:1px solid var(--gray-100);}
+.sub-selfie{width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--gray-100);margin-bottom:6px;}
+.reporter-name{font-size:11px;font-weight:700;text-align:center;color:var(--black);}
+.reporter-email{font-size:10px;color:var(--gray-500);text-align:center;word-break:break-all;}
+.sub-main{flex:1;padding:16px;}
+.sub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.sub-title{font-family:var(--font-d);font-size:17px;font-weight:700;line-height:1.3;}
+.sub-status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:2px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;}
+.ssb-pending{background:#fff3cd;color:#856404;}
+.ssb-approved{background:#d4edda;color:#155724;}
+.ssb-rejected{background:#f8d7da;color:#721c24;}
+.sub-meta-row{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--gray-500);margin-bottom:10px;}
+.sub-body-text{font-size:13px;color:var(--gray-700);line-height:1.6;margin-bottom:12px;max-height:80px;overflow:hidden;position:relative;}
+.sub-body-text.expanded{max-height:none;}
+.read-more{font-size:12px;color:var(--red);cursor:pointer;font-weight:600;}
+.sub-media{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.media-thumb{width:72px;height:52px;object-fit:cover;border-radius:2px;cursor:pointer;transition:opacity 0.2s;}
+.media-thumb:hover{opacity:0.8;}
+.media-video-thumb{width:72px;height:52px;background:var(--black);border-radius:2px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;cursor:pointer;}
+.sub-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--gray-100);}
+.sub-time{font-size:11px;color:var(--gray-500);margin-left:auto;}
+.btn{padding:7px 16px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;border:none;border-radius:2px;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-approve{background:var(--green);color:white;}.btn-approve:hover{background:#145e2c;}
+.btn-reject{background:#dc3545;color:white;}.btn-reject:hover{background:#b02a37;}
+.btn-preview{background:var(--gray-100);color:var(--gray-700);}.btn-preview:hover{background:var(--gray-300);}
+.btn-undo{background:#fff3cd;color:#856404;border:1px solid #ffc107;}.btn-undo:hover{background:#ffe69c;}
+
+.reject-form{background:#fff5f5;border-top:1px solid #f5c6cb;padding:12px 16px;display:none;align-items:center;gap:10px;flex-wrap:wrap;}
+.reject-form input{flex:1;min-width:200px;border:1px solid var(--gray-300);padding:7px 12px;font-family:var(--font);font-size:13px;border-radius:2px;outline:none;}
+.reject-form input:focus{border-color:#dc3545;}
+
+.empty{text-align:center;padding:60px 20px;color:var(--gray-500);}
+.empty .icon{font-size:40px;margin-bottom:12px;}
+.empty p{font-size:14px;}
+
+/* MEDIA LIGHTBOX */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999;display:flex;align-items:center;justify-content:center;display:none;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:90vw;max-height:90vh;object-fit:contain;}
+.lightbox-close{position:absolute;top:16px;right:20px;background:none;border:none;color:white;font-size:28px;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;top:20px;right:20px;padding:13px 18px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);transform:translateX(130%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;border-radius:2px;min-width:240px;display:flex;align-items:center;gap:8px;}
+.toast.success{background:var(--green);color:white;}.toast.error{background:#dc3545;color:white;}
+.toast.show{transform:translateX(0);}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--black);display:flex;align-items:center;justify-content:center;z-index:9998;}
+.login-box{background:white;width:340px;padding:36px;}
+.login-logo{font-family:var(--font-d);font-size:24px;font-weight:900;margin-bottom:4px;}
+.login-logo span{color:var(--red);}
+.login-sub{font-size:11px;color:var(--gray-500);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:24px;}
+.login-err{background:#f8d7da;color:#721c24;padding:9px 12px;font-size:12px;margin-bottom:12px;border-radius:2px;display:none;}
+.lfield{margin-bottom:14px;}
+.lfield label{display:block;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray-700);margin-bottom:4px;}
+.lfield input{width:100%;border:1px solid var(--gray-300);padding:9px 12px;font-family:var(--font);font-size:14px;outline:none;border-radius:2px;}
+.lfield input:focus{border-color:var(--red);}
+.lbtn{width:100%;background:var(--red);color:white;border:none;padding:11px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border-radius:2px;margin-top:4px;}
+.lbtn:hover{background:#9a1414;}
+
+@media(max-width:768px){.stats-row{grid-template-columns:1fr 1fr;}.sub-top{flex-direction:column;}.sub-selfie-col{width:100%;flex-direction:row;gap:12px;border-right:none;border-bottom:1px solid var(--gray-100);}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">UPDATE <span>BICHOLIM</span></div>
+    <div class="login-sub">Admin — Community Approvals</div>
+    <div class="login-err" id="loginErr">Wrong credentials</div>
+    <div class="lfield"><label>Username</label><input type="text" id="lu" placeholder="admin" onkeypress="if(event.key==='Enter')login()"></div>
+    <div class="lfield"><label>Password</label><input type="password" id="lp" placeholder="••••••••" onkeypress="if(event.key==='Enter')login()"></div>
+    <button class="lbtn" onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <a href="index.html" class="back-btn">← Admin Portal</a>
+  <div class="page-title">UPDATE <span>BICHOLIM</span> — Community Submissions</div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.4);" id="adminName"></div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card pending"><div class="stat-label">Pending Review</div><div class="stat-value" id="stp">0</div></div>
+    <div class="stat-card approved"><div class="stat-label">Approved</div><div class="stat-value" id="sta">0</div></div>
+    <div class="stat-card rejected"><div class="stat-label">Rejected</div><div class="stat-value" id="str">0</div></div>
+    <div class="stat-card total"><div class="stat-label">Total Received</div><div class="stat-value" id="stt">0</div></div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <select id="fStatus" onchange="applyFilter()">
+      <option value="">All Submissions</option>
+      <option value="pending" selected>⏳ Pending Only</option>
+      <option value="approved">✅ Approved</option>
+      <option value="rejected">❌ Rejected</option>
+    </select>
+    <select id="fCat" onchange="applyFilter()">
+      <option value="">All Categories</option>
+      <option>Local Issue</option><option>Event / Festival</option><option>Community News</option>
+      <option>Politics</option><option>Development</option><option>Sports</option>
+      <option>Crime / Incident</option><option>Business</option><option>Health</option>
+      <option>Education</option><option>Environment</option><option>Other</option>
+    </select>
+    <input type="text" id="fSearch" placeholder="Search by title or reporter…" oninput="applyFilter()">
+    <button class="btn btn-preview" onclick="loadSubmissions()">🔄 Refresh</button>
+  </div>
+
+  <!-- SUBMISSIONS -->
+  <div id="subList" class="submissions-grid">
+    <div class="empty"><div class="icon">⏳</div><p>Loading submissions…</p></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">×</button>
+  <img id="lbImg" src="" alt="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,collection,query,orderBy,getDocs,doc,updateDoc,serverTimestamp,where,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+// ▶ SAME Firebase config as people portal
+const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+const app=initializeApp(cfg);
+const db=getFirestore(app);
+
+// ── ADMIN AUTH (simple local password, same as main admin)
+const USERS_KEY='ub_users';
+let users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]');
+if(!users.length)users=[{username:'admin',password:'bicholim2025',role:'admin'}];
+
+window.login=()=>{
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value;
+  const found=users.find(x=>x.username===u&&x.password===p);
+  if(found){sessionStorage.setItem('ub_admin',JSON.stringify(found));document.getElementById('loginScreen').style.display='none';document.getElementById('adminName').textContent=found.username;loadSubmissions();}
+  else{document.getElementById('loginErr').style.display='block';}
+};
+if(sessionStorage.getItem('ub_admin')){
+  const u=JSON.parse(sessionStorage.getItem('ub_admin'));
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('adminName').textContent=u.username;
+}
+
+// ── UTILS
+function toast(msg,t='success'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${t} show`;clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}
+function timeAgo(ts){if(!ts)return'—';const d=ts.toDate?ts.toDate():new Date(ts);const diff=Date.now()-d;const m=Math.floor(diff/60000),h=Math.floor(diff/3600000),days=Math.floor(diff/86400000);if(m<1)return'just now';if(m<60)return m+'m ago';if(h<24)return h+'h ago';return days+'d ago';}
+
+let allSubs=[];
+
+// ── LOAD
+window.loadSubmissions=async()=>{
+  if(!sessionStorage.getItem('ub_admin'))return;
+  document.getElementById('subList').innerHTML='<div class="empty"><div class="icon">⏳</div><p>Loading submissions…</p></div>';
+  try{
+    const snap=await getDocs(query(collection(db,'submissions'),orderBy('submittedAt','desc')));
+    allSubs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    updateStats();
+    applyFilter();
+  }catch(e){toast('Failed to load: '+e.message,'error');}
+};
+
+function updateStats(){
+  document.getElementById('stt').textContent=allSubs.length;
+  document.getElementById('stp').textContent=allSubs.filter(s=>s.status==='pending').length;
+  document.getElementById('sta').textContent=allSubs.filter(s=>s.status==='approved').length;
+  document.getElementById('str').textContent=allSubs.filter(s=>s.status==='rejected').length;
+}
+
+window.applyFilter=()=>{
+  const status=document.getElementById('fStatus').value;
+  const cat=document.getElementById('fCat').value;
+  const search=document.getElementById('fSearch').value.toLowerCase();
+  let filtered=allSubs;
+  if(status)filtered=filtered.filter(s=>s.status===status);
+  if(cat)filtered=filtered.filter(s=>s.category===cat);
+  if(search)filtered=filtered.filter(s=>s.title?.toLowerCase().includes(search)||s.reporterName?.toLowerCase().includes(search));
+  renderSubs(filtered);
+};
+
+function renderSubs(subs){
+  const el=document.getElementById('subList');
+  if(!subs.length){el.innerHTML='<div class="empty"><div class="icon">📭</div><p>No submissions match your filter.</p></div>';return;}
+  const statusBadge={pending:'ssb-pending',approved:'ssb-approved',rejected:'ssb-rejected'};
+  const statusLabel={pending:'⏳ Pending Review',approved:'✅ Approved & Published',rejected:'❌ Rejected'};
+  el.innerHTML=subs.map(s=>`
+    <div class="sub-card ${s.status||'pending'}" id="card-${s.id}">
+      <div class="sub-top">
+        <div class="sub-selfie-col">
+          <img class="sub-selfie" src="${s.selfieURL||''}" alt="${s.reporterName}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect fill=%22%23eee%22 width=%2264%22 height=%2264%22/><text x=%2250%%22 y=%2255%%22 font-size=%2228%22 text-anchor=%22middle%22>${(s.reporterName||'?')[0]}</text></svg>'">
+          <div class="reporter-name">${s.reporterName||'Unknown'}</div>
+          <div class="reporter-email">${s.reporterEmail||''}</div>
+        </div>
+        <div class="sub-main">
+          <div class="sub-head">
+            <div class="sub-title">${s.title||'Untitled'}</div>
+            <span class="sub-status-badge ${statusBadge[s.status]||'ssb-pending'}">${statusLabel[s.status]||'⏳ Pending'}</span>
+          </div>
+          <div class="sub-meta-row">
+            <span>📂 ${s.category||'—'}</span>
+            <span>📍 ${s.location||'—'}</span>
+            <span>📅 ${s.date||'—'} ${s.time?'at '+s.time:''}</span>
+            <span>📞 ${s.contact||'Not provided'}</span>
+          </div>
+          <div class="sub-body-text" id="body-${s.id}">${(s.body||'').replace(/\n/g,'<br>')}</div>
+          ${(s.body||'').length>200?`<div class="read-more" onclick="toggleBody('${s.id}')">Read more ▼</div>`:''}
+          ${s.media?.length?`<div class="sub-media">${s.media.map(m=>m.type==='image'?`<img class="media-thumb" src="${m.url}" alt="${m.name}" onclick="openLightbox('${m.url}')">`:
+          `<div class="media-video-thumb" onclick="window.open('${m.url}','_blank')">▶</div>`).join('')}</div>`:''}
+          <div class="sub-actions">
+            ${s.status==='pending'?`
+              <button class="btn btn-approve" onclick="approve('${s.id}','${s.uid}')">✅ Approve & Publish</button>
+              <button class="btn btn-reject" onclick="toggleReject('${s.id}')">❌ Reject</button>
+            `:''}
+            ${s.status==='approved'?`<button class="btn btn-undo" onclick="setPending('${s.id}')">↩ Move to Pending</button>`:''}
+            ${s.status==='rejected'?`<button class="btn btn-undo" onclick="setPending('${s.id}')">↩ Move to Pending</button>`:''}
+            <div class="sub-time">${timeAgo(s.submittedAt)}</div>
+          </div>
+          <div class="reject-form" id="rform-${s.id}">
+            <input type="text" id="rreason-${s.id}" placeholder="Reason for rejection (optional — shown to reporter)…">
+            <button class="btn btn-reject" onclick="confirmReject('${s.id}')">Confirm Rejection</button>
+            <button class="btn btn-preview" onclick="toggleReject('${s.id}')">Cancel</button>
+          </div>
+          ${s.rejectReason?`<div style="background:#fff5f5;padding:8px 14px;font-size:12px;color:#721c24;border-top:1px solid #f5c6cb;">Rejection reason: ${s.rejectReason}</div>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+window.toggleBody=(id)=>{
+  const el=document.getElementById('body-'+id);
+  const rm=el.nextElementSibling;
+  el.classList.toggle('expanded');
+  rm.textContent=el.classList.contains('expanded')?'Read less ▲':'Read more ▼';
+};
+
+window.openLightbox=(url)=>{
+  document.getElementById('lbImg').src=url;
+  document.getElementById('lightbox').classList.add('open');
+};
+
+window.approve=async(id,uid)=>{
+  try{
+    await updateDoc(doc(db,'submissions',id),{status:'approved',approvedAt:serverTimestamp()});
+    if(uid)await updateDoc(doc(db,'users',uid),{publishedCount:increment(1)});
+    const idx=allSubs.findIndex(s=>s.id===id);
+    if(idx>=0)allSubs[idx].status='approved';
+    updateStats();applyFilter();
+    toast('✅ Story approved and published!');
+  }catch(e){toast('Error: '+e.message,'error');}
+};
+
+window.toggleReject=(id)=>{
+  const form=document.getElementById('rform-'+id);
+  form.style.display=form.style.display==='flex'?'none':'flex';
+};
+
+window.confirmReject=async(id)=>{
+  const reason=document.getElementById('rreason-'+id).value.trim();
+  try{
+    await updateDoc(doc(db,'submissions',id),{status:'rejected',rejectReason:reason||'',rejectedAt:serverTimestamp()});
+    const idx=allSubs.findIndex(s=>s.id===id);
+    if(idx>=0){allSubs[idx].status='rejected';allSubs[idx].rejectReason=reason;}
+    updateStats();applyFilter();
+    toast('Story rejected.');
+  }catch(e){toast('Error: '+e.message,'error');}
+};
+
+window.setPending=async(id)=>{
+  try{
+    await updateDoc(doc(db,'submissions',id),{status:'pending'});
+    const idx=allSubs.findIndex(s=>s.id===id);
+    if(idx>=0)allSubs[idx].status='pending';
+    updateStats();applyFilter();
+    toast('Moved back to pending.');
+  }catch(e){toast('Error: '+e.message,'error');}
+};
+
+// Auto load if logged in
+if(sessionStorage.getItem('ub_admin'))loadSubmissions();
+</script>
+</body>
+</html>
