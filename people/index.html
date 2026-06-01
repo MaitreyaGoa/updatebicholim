@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>People's Portal — Update Bicholim</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#BB1919;--red-dark:#8B0000;--black:#0A0A0A;--charcoal:#1A1A1A;
+  --gray-700:#444;--gray-500:#777;--gray-300:#CCC;--gray-100:#F0F0F0;
+  --gray-50:#F8F8F8;--white:#FFF;--gold:#F5A623;--green:#1a7a3a;
+  --font:'IBM Plex Sans',sans-serif;--font-d:'Playfair Display',serif;
+  --font-b:'Source Serif 4',serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--white);color:var(--black);line-height:1.5;}
+a{color:inherit;text-decoration:none;}
+img{display:block;max-width:100%;}
+
+.site-header{background:var(--black);border-bottom:3px solid var(--red);}
+.site-header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;flex-wrap:wrap;gap:10px;}
+.back-link{color:rgba(255,255,255,0.65);font-size:12px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;transition:color 0.15s;}
+.back-link:hover{color:white;}
+.portal-logo{font-family:var(--font-d);font-size:18px;font-weight:900;color:white;}
+.portal-logo span{color:var(--red);}
+.header-auth{display:flex;align-items:center;gap:8px;}
+.gsign{display:flex;align-items:center;gap:7px;background:white;color:var(--black);border:none;padding:7px 14px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;border-radius:2px;transition:box-shadow 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.gsign:hover{box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.gsign svg{width:15px;height:15px;flex-shrink:0;}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);padding:5px 10px;border-radius:2px;}
+.user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
+.user-chip .uname{font-size:12px;font-weight:500;color:rgba(255,255,255,0.9);}
+.signout-btn{background:none;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);padding:5px 10px;font-family:var(--font);font-size:11px;cursor:pointer;border-radius:2px;}
+.signout-btn:hover{color:white;border-color:rgba(255,255,255,0.5);}
+
+.portal-hero{background:linear-gradient(135deg,#0a0a0a 0%,#1a0505 60%,#2d0808 100%);padding:52px 24px;text-align:center;position:relative;overflow:hidden;}
+.portal-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 60% 50%,rgba(187,25,25,0.2) 0%,transparent 60%);}
+.hero-tag{display:inline-block;background:var(--red);color:white;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;padding:4px 14px;margin-bottom:14px;}
+.portal-hero h1{font-family:var(--font-d);font-size:clamp(26px,5vw,52px);font-weight:900;color:white;line-height:1.1;margin-bottom:12px;position:relative;}
+.portal-hero h1 em{color:var(--red);font-style:normal;}
+.portal-hero p{font-size:15px;color:rgba(255,255,255,0.6);max-width:540px;margin:0 auto 24px;line-height:1.6;position:relative;}
+.hero-stats{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;position:relative;}
+.hero-stat .num{font-family:var(--font-d);font-size:28px;font-weight:700;color:white;}
+.hero-stat .lbl{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase;}
+
+.main-container{max-width:940px;margin:0 auto;padding:32px 20px;}
+
+.portal-tabs{display:flex;border-bottom:2px solid var(--gray-100);margin-bottom:32px;overflow-x:auto;}
+.portal-tab{padding:11px 20px;font-family:var(--font);font-size:13px;font-weight:600;color:var(--gray-500);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.15s;}
+.portal-tab:hover{color:var(--black);}
+.portal-tab.active{color:var(--red);border-bottom-color:var(--red);}
+
+.login-wall{background:var(--gray-50);border:2px dashed var(--gray-300);padding:56px 24px;text-align:center;border-radius:3px;}
+.login-wall .icon{font-size:44px;margin-bottom:14px;}
+.login-wall h2{font-family:var(--font-d);font-size:22px;font-weight:700;margin-bottom:8px;}
+.login-wall p{font-size:14px;color:var(--gray-500);margin-bottom:22px;max-width:380px;margin-left:auto;margin-right:auto;}
+.big-gsign{display:inline-flex;align-items:center;gap:10px;background:white;border:1px solid var(--gray-300);padding:12px 22px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.2s;}
+.big-gsign:hover{box-shadow:0 4px 16px rgba(0,0,0,0.15);transform:translateY(-1px);}
+.big-gsign svg{width:20px;height:20px;}
+
+.form-card{background:white;border:1px solid var(--gray-100);padding:28px;}
+.fsec-title{font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid var(--gray-100);display:flex;align-items:center;gap:8px;}
+.fsec-title::before{content:'';width:4px;height:17px;background:var(--red);border-radius:2px;flex-shrink:0;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray-700);margin-bottom:4px;}
+.req{color:var(--red);}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--gray-300);padding:9px 12px;font-family:var(--font-b);font-size:14px;outline:none;transition:border-color 0.2s;border-radius:2px;background:white;}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(187,25,25,0.07);}
+.field textarea{resize:vertical;min-height:110px;line-height:1.6;}
+.hint{font-size:11px;color:var(--gray-500);margin-top:3px;}
+.char-count{font-size:11px;color:#aaa;text-align:right;margin-top:2px;}
+
+.upload-zone{border:2px dashed var(--gray-300);padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--gray-50);border-radius:3px;position:relative;}
+.upload-zone:hover{border-color:var(--red);background:#fff5f5;}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone .ui{font-size:26px;margin-bottom:6px;}
+.upload-zone .ut{font-size:14px;color:var(--gray-700);font-weight:500;}
+.upload-zone .us{font-size:11px;color:var(--gray-500);margin-top:3px;}
+.prev-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.prev-item{position:relative;width:76px;height:76px;border-radius:3px;overflow:hidden;background:var(--gray-100);}
+.prev-item img,.prev-item video{width:100%;height:100%;object-fit:cover;}
+.prev-item .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:white;border:none;width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;}
+
+.selfie-box{background:var(--gray-50);border:1px solid var(--gray-100);padding:20px;border-radius:3px;margin-bottom:16px;}
+.selfie-box h3{font-size:14px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.selfie-desc{font-size:12px;color:var(--gray-500);margin-bottom:14px;}
+.cam-wrap{position:relative;background:var(--black);border-radius:3px;overflow:hidden;aspect-ratio:4/3;max-width:320px;margin:0 auto;}
+.cam-wrap video,.cam-wrap canvas{width:100%;height:100%;object-fit:cover;display:block;}
+.cam-wrap canvas{display:none;}
+.selfie-ctrls{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+.captured-wrap{max-width:320px;margin:0 auto;}
+.captured-wrap img{width:100%;border-radius:3px;}
+.selfie-ok{display:inline-flex;align-items:center;gap:6px;background:#d4edda;color:#155724;padding:6px 12px;font-size:12px;font-weight:600;margin-top:8px;border-radius:2px;}
+.selfie-err{background:#f8d7da;border:1px solid #f5c6cb;padding:9px 12px;border-radius:2px;font-size:12px;color:#721c24;display:none;margin-top:7px;}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:2px solid;}
+.b-new{background:#fff3e0;color:#e65100;border-color:#ffb74d;}
+.b-rep{background:#e3f2fd;color:#1565c0;border-color:#42a5f5;}
+.b-jour{background:#f3e5f5;color:#6a1b9a;border-color:#ab47bc;}
+.b-sr{background:#fff8e1;color:#f57f17;border-color:var(--gold);}
+.b-chief{background:linear-gradient(135deg,#f5a623,#e8850a);color:white;border-color:var(--gold);}
+
+.prog-wrap{background:var(--gray-100);border-radius:99px;height:7px;margin:5px 0;}
+.prog-bar{height:7px;border-radius:99px;background:var(--red);transition:width 0.5s;}
+
+.sub-card{background:white;border:1px solid var(--gray-100);padding:18px;margin-bottom:12px;border-left:4px solid var(--gray-300);}
+.sub-card.pending{border-left-color:var(--gold);}
+.sub-card.approved{border-left-color:var(--green);}
+.sub-card.rejected{border-left-color:#dc3545;}
+.sub-status{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:2px;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+.sub-status.pending{background:#fff3cd;color:#856404;}
+.sub-status.approved{background:#d4edda;color:#155724;}
+.sub-status.rejected{background:#f8d7da;color:#721c24;}
+
+.lb-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--gray-100);}
+.lb-rank{font-family:var(--font-d);font-size:22px;font-weight:900;color:var(--gray-100);width:34px;flex-shrink:0;text-align:center;}
+.lb-rank.gold{color:#FFD700;}.lb-rank.silver{color:#C0C0C0;}.lb-rank.bronze{color:#CD7F32;}
+.lb-av{width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--gray-100);}
+.lb-name{font-weight:700;font-size:14px;}
+.lb-meta{font-size:11px;color:var(--gray-500);margin-top:2px;}
+.lb-score{margin-left:auto;font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--red);}
+.lb-pts{font-size:10px;color:var(--gray-500);text-align:right;}
+
+.pn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
+.pn-card{background:white;border:1px solid var(--gray-100);overflow:hidden;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;}
+.pn-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,0.1);}
+.pn-img{height:150px;overflow:hidden;background:var(--gray-100);}
+.pn-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s;}
+.pn-card:hover .pn-img img{transform:scale(1.04);}
+.pn-body{padding:12px;}
+.pn-cat{font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--red);margin-bottom:5px;}
+.pn-title{font-family:var(--font-d);font-size:15px;font-weight:700;line-height:1.3;margin-bottom:6px;}
+.pn-rep{display:flex;align-items:center;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--gray-100);}
+.rep-selfie{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--gray-100);}
+.rep-name{font-size:12px;font-weight:600;color:var(--gray-700);}
+.rep-badge-s{font-size:10px;color:var(--gray-500);}
+
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:8px;border-bottom:2px solid var(--black);}
+.sec-title{font-family:var(--font-d);font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.sec-title::before{content:'';width:4px;height:20px;background:var(--red);border-radius:2px;flex-shrink:0;}
+
+.prof-card{background:var(--black);color:white;padding:24px;border-radius:2px;margin-bottom:24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.prof-av{width:66px;height:66px;border-radius:50%;object-fit:cover;border:3px solid var(--red);flex-shrink:0;}
+.prof-name{font-family:var(--font-d);font-size:20px;font-weight:700;color:white;}
+
+.btn{padding:9px 18px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:none;border-radius:2px;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.04em;}
+.btn-p{background:var(--red);color:white;}.btn-p:hover{background:var(--red-dark);}
+.btn-p:disabled{opacity:0.6;cursor:not-allowed;}
+.btn-s{background:var(--gray-100);color:var(--gray-700);}.btn-s:hover{background:var(--gray-300);}
+.btn-lg{padding:13px 26px;font-size:14px;}
+
+.toast{position:fixed;top:20px;right:20px;padding:13px 18px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);transform:translateX(130%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;border-radius:2px;min-width:250px;display:flex;align-items:center;gap:8px;}
+.toast.success{background:var(--green);color:white;}.toast.error{background:#dc3545;color:white;}
+.toast.show{transform:translateX(0);}
+
+.reward-howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px;}
+.reward-card{text-align:center;padding:12px;background:white;border:1px solid var(--gray-100);border-radius:2px;}
+.reward-card .ri{font-size:22px;margin-bottom:6px;}
+
+@media(max-width:640px){.form-grid{grid-template-columns:1fr;}.prof-card{flex-direction:column;text-align:center;}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../index.html" class="back-link">← Main Site</a>
+    <div class="portal-logo">UPDATE <span>BICHOLIM</span></div>
+    <div class="header-auth" id="headerAuth">
+      <button class="gsign" id="headerSignIn" onclick="doSignIn()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="portal-hero">
+  <div class="hero-tag">🗞️ Community Journalism</div>
+  <h1>You Are The <em>Reporter.</em><br>Bicholim Needs Your Voice.</h1>
+  <p>Submit local stories, events & issues. Get published on Update Bicholim. Earn badges. Be recognised as a local reporter.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" id="sSub">—</div><div class="lbl">Submitted</div></div>
+    <div class="hero-stat"><div class="num" id="sPub">—</div><div class="lbl">Published</div></div>
+    <div class="hero-stat"><div class="num" id="sCon">—</div><div class="lbl">Contributors</div></div>
+  </div>
+</div>
+
+<div class="main-container">
+  <div class="portal-tabs">
+    <div class="portal-tab active" onclick="showTab('submit',this)">✏️ Submit News</div>
+    <div class="portal-tab" onclick="showTab('mystories',this)">📰 My Stories</div>
+    <div class="portal-tab" onclick="showTab('leaderboard',this)">🏆 Leaderboard</div>
+    <div class="portal-tab" onclick="showTab('peoplenews',this)">📢 People's News</div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div id="tab-submit">
+    <div id="lw-submit" class="login-wall">
+      <div class="icon">🔐</div>
+      <h2>Sign in to Submit News</h2>
+      <p>Use your Google account to submit community news. Stories are reviewed by our team before publishing.</p>
+      <button class="big-gsign" onclick="doSignIn()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google to Continue
+      </button>
+    </div>
+    <div id="sf" style="display:none;">
+      <div class="form-card">
+        <!-- SELFIE -->
+        <div class="fsec-title">📸 Reporter Identity Verification</div>
+        <div class="selfie-box">
+          <h3>🤳 Take Your Selfie <span style="color:var(--red);font-size:10px;font-weight:700;margin-left:5px;background:#fdd;padding:2px 7px;border-radius:2px;">MANDATORY</span></h3>
+          <p class="selfie-desc">Your selfie verifies you're a real community member and will appear alongside your published story.</p>
+          <div id="cam-ui">
+            <div class="cam-wrap"><video id="sv" autoplay playsinline muted></video><canvas id="sc"></canvas></div>
+            <div class="selfie-ctrls">
+              <button class="btn btn-s" onclick="startCam()">📷 Open Camera</button>
+              <button class="btn btn-p" id="capBtn" onclick="captureSelfie()" disabled>📸 Take Selfie</button>
+            </div>
+          </div>
+          <div id="captured-ui" style="display:none;">
+            <div class="captured-wrap"><img id="selfieImg" src="" alt="Selfie"></div>
+            <div class="selfie-ok">✅ Selfie captured! This will appear with your story.</div>
+            <div style="margin-top:8px;"><button class="btn btn-s" style="font-size:11px;padding:5px 12px;" onclick="retakeSelfie()">🔄 Retake</button></div>
+          </div>
+          <div class="selfie-err" id="selfie-err">⚠️ Selfie is required before submitting.</div>
+        </div>
+
+        <!-- STORY -->
+        <div class="fsec-title">📰 Story Details</div>
+        <div class="form-grid" style="margin-bottom:16px;">
+          <div class="field">
+            <label>Category <span class="req">*</span></label>
+            <select id="f-cat"><option value="">— Select —</option><option>Local Issue</option><option>Event / Festival</option><option>Community News</option><option>Politics</option><option>Development</option><option>Sports</option><option>Crime / Incident</option><option>Business</option><option>Health</option><option>Education</option><option>Environment</option><option>Other</option></select>
+          </div>
+          <div class="field">
+            <label>News Date <span class="req">*</span></label>
+            <input type="date" id="f-date">
+          </div>
+        </div>
+        <div class="field">
+          <label>Headline <span class="req">*</span></label>
+          <input type="text" id="f-title" placeholder="Write a clear, factual headline…" maxlength="120" oninput="document.getElementById('tc').textContent=this.value.length">
+          <div class="char-count"><span id="tc">0</span>/120</div>
+        </div>
+        <div class="form-grid" style="margin-bottom:0;">
+          <div class="field">
+            <label>Location / Venue <span class="req">*</span></label>
+            <input type="text" id="f-loc" placeholder="e.g. Bicholim Market">
+          </div>
+          <div class="field">
+            <label>Event Time (optional)</label>
+            <input type="time" id="f-time">
+          </div>
+        </div>
+        <div class="field">
+          <label>Description <span class="req">*</span></label>
+          <textarea id="f-body" placeholder="Describe what happened — who, what, when, where, why…" maxlength="2000" oninput="document.getElementById('bc').textContent=this.value.length"></textarea>
+          <div class="char-count"><span id="bc">0</span>/2000</div>
+          <div class="hint">Be factual. Write what you personally witnessed or know to be true.</div>
+        </div>
+
+        <!-- MEDIA -->
+        <div class="field">
+          <label>Photos / Video <span class="req">*</span> (min 1 photo)</label>
+          <div class="upload-zone">
+            <input type="file" accept="image/*,video/mp4,video/webm" multiple id="media-input" onchange="handleMedia(this)">
+            <div class="ui">📷</div>
+            <div class="ut">Upload photos or videos from the scene</div>
+            <div class="us">JPG, PNG, MP4 · max 20MB each · up to 5 files</div>
+          </div>
+          <div class="prev-wrap" id="media-prev"></div>
+        </div>
+
+        <!-- REPORTER -->
+        <div class="form-grid" style="margin-bottom:0;">
+          <div class="field">
+            <label>Your Name (as published) <span class="req">*</span></label>
+            <input type="text" id="f-name" placeholder="Your full name">
+            <div class="hint">Shown as "Reported by [Your Name]"</div>
+          </div>
+          <div class="field">
+            <label>Contact (not published)</label>
+            <input type="text" id="f-contact" placeholder="Phone / WhatsApp">
+          </div>
+        </div>
+        <div class="field" style="margin-top:4px;">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--gray-700);">
+            <input type="checkbox" id="f-agree" style="width:auto;margin-top:3px;flex-shrink:0;">
+            I confirm this information is true and give Update Bicholim permission to publish it. False submissions may result in account suspension.
+          </label>
+        </div>
+        <div style="background:#f0f7ff;border:1px solid #bee3f8;padding:14px;margin-bottom:18px;border-radius:2px;font-size:13px;color:#2b6cb0;">
+          📋 <strong>What happens next:</strong> Your story will be reviewed within 24 hours. Track status in "My Stories." Once approved, it publishes under <strong>People's News</strong> with your name and selfie.
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-p btn-lg" id="submitBtn" onclick="submitStory()">🚀 Submit Story for Review</button>
+          <span id="submit-status" style="font-size:12px;color:var(--gray-500);"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MY STORIES -->
+  <div id="tab-mystories" style="display:none;">
+    <div id="lw-my" class="login-wall">
+      <div class="icon">🔐</div><h2>Sign in to View Your Stories</h2>
+      <button class="big-gsign" onclick="doSignIn()"><svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>
+    </div>
+    <div id="my-content" style="display:none;">
+      <div id="prof-card"></div>
+      <div class="sec-header"><h2 class="sec-title">My Submissions</h2></div>
+      <div id="my-list"><p style="color:var(--gray-500);font-size:14px;padding:16px 0;">No stories yet. Submit your first from the Submit tab!</p></div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="tab-leaderboard" style="display:none;">
+    <div class="sec-header"><h2 class="sec-title">🏆 Community Reporters</h2></div>
+    <div style="background:var(--gray-50);border:1px solid var(--gray-100);padding:16px;border-radius:2px;margin-bottom:20px;">
+      <strong style="font-size:13px;">🎖️ How Badges Work</strong>
+      <div class="reward-howto">
+        <div class="reward-card"><div class="ri">🌱</div><span class="badge b-new">Newcomer</span><div style="font-size:11px;color:var(--gray-500);margin-top:5px;">1st story published</div></div>
+        <div class="reward-card"><div class="ri">📝</div><span class="badge b-rep">Reporter</span><div style="font-size:11px;color:var(--gray-500);margin-top:5px;">3 published</div></div>
+        <div class="reward-card"><div class="ri">🗞️</div><span class="badge b-jour">Journalist</span><div style="font-size:11px;color:var(--gray-500);margin-top:5px;">10 published</div></div>
+        <div class="reward-card"><div class="ri">⭐</div><span class="badge b-sr">Sr. Reporter</span><div style="font-size:11px;color:var(--gray-500);margin-top:5px;">25 published</div></div>
+        <div class="reward-card"><div class="ri">👑</div><span class="badge b-chief">Chief Reporter</span><div style="font-size:11px;color:var(--gray-500);margin-top:5px;">50 published</div></div>
+      </div>
+    </div>
+    <div id="lb-list"><p style="color:var(--gray-500);font-size:14px;padding:16px 0;">No contributors yet. Be the first!</p></div>
+  </div>
+
+  <!-- PEOPLE'S NEWS -->
+  <div id="tab-peoplenews" style="display:none;">
+    <div class="sec-header"><h2 class="sec-title">📢 People's News</h2><span style="font-size:12px;color:var(--gray-500);font-family:var(--font);">Reported by Bicholim citizens</span></div>
+    <div class="pn-grid" id="pn-list"><p style="color:var(--gray-500);font-size:14px;padding:16px 0;">No community stories published yet. Be the first to submit!</p></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import{getFirestore,collection,addDoc,query,where,orderBy,getDocs,doc,updateDoc,getDoc,setDoc,serverTimestamp,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import{getStorage,ref,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+// ▶ REPLACE with your Firebase config
+const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const st=getStorage(app);
+const prov=new GoogleAuthProvider();
+
+let user=null,selfieB64=null,mediaFs=[];let camStream=null;
+
+// ── UTILS
+function toast(msg,t='success'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${t} show`;clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}
+window.showTab=(tab,el)=>{['submit','mystories','leaderboard','peoplenews'].forEach(t=>{const e=document.getElementById('tab-'+t);if(e)e.style.display=t===tab?'block':'none';});document.querySelectorAll('.portal-tab').forEach(t=>t.classList.remove('active'));el?.classList.add('active');if(tab==='peoplenews')loadPN();if(tab==='leaderboard')loadLB();if(tab==='mystories'&&user)loadMy();};
+function badge(n){if(n>=50)return{l:'Chief Reporter',c:'b-chief',i:'👑'};if(n>=25)return{l:'Sr. Reporter',c:'b-sr',i:'⭐'};if(n>=10)return{l:'Journalist',c:'b-jour',i:'🗞️'};if(n>=3)return{l:'Reporter',c:'b-rep',i:'📝'};if(n>=1)return{l:'Newcomer',c:'b-new',i:'🌱'};return{l:'Citizen',c:'b-new',i:'🙋'};}
+
+// ── AUTH
+window.doSignIn=async()=>{try{const r=await signInWithPopup(auth,prov);const u=r.user;const uref=doc(db,'users',u.uid);const s=await getDoc(uref);if(!s.exists())await setDoc(uref,{name:u.displayName,email:u.email,photo:u.photoURL,publishedCount:0,submittedCount:0,joinedAt:serverTimestamp()});toast('Welcome, '+u.displayName+'!');}catch(e){toast('Sign-in failed: '+e.message,'error');}};
+window.doSignOut=async()=>{await signOut(auth);toast('Signed out.');};
+
+onAuthStateChanged(auth,async u=>{user=u;updateHeader(u);showWalls(u);if(u&&document.getElementById('tab-mystories').style.display!=='none')loadMy();if(u){const el=document.getElementById('f-name');if(el&&!el.value)el.value=u.displayName||'';}loadStats();});
+
+function updateHeader(u){const el=document.getElementById('headerAuth');if(u){el.innerHTML=`<div class="user-chip"><img src="${u.photoURL||''}" alt="${u.displayName}"><span class="uname">${u.displayName}</span></div><button class="signout-btn" onclick="doSignOut()">Sign Out</button>`;}else{el.innerHTML=`<button class="gsign" onclick="doSignIn()"><svg viewBox="0 0 24 24" width="15"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Sign in with Google</button>`;}}
+function showWalls(u){const s=!!u;['lw-submit','lw-my'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=s?'none':'block';});const sf=document.getElementById('sf');if(sf)sf.style.display=s?'block':'none';const mc=document.getElementById('my-content');if(mc)mc.style.display=s?'block':'none';}
+
+// ── CAMERA
+window.startCam=async()=>{try{camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});document.getElementById('sv').srcObject=camStream;document.getElementById('capBtn').disabled=false;toast('Camera ready. Click Take Selfie!');}catch(e){toast('Camera access denied. Please allow camera.','error');}};
+window.captureSelfie=()=>{const v=document.getElementById('sv'),c=document.getElementById('sc');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);selfieB64=c.toDataURL('image/jpeg',0.8);if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}document.getElementById('selfieImg').src=selfieB64;document.getElementById('cam-ui').style.display='none';document.getElementById('captured-ui').style.display='block';document.getElementById('selfie-err').style.display='none';};
+window.retakeSelfie=()=>{selfieB64=null;document.getElementById('cam-ui').style.display='block';document.getElementById('captured-ui').style.display='none';document.getElementById('capBtn').disabled=true;};
+
+// ── MEDIA
+window.handleMedia=(input)=>{mediaFs=Array.from(input.files).slice(0,5);const p=document.getElementById('media-prev');p.innerHTML='';mediaFs.forEach((f,i)=>{const d=document.createElement('div');d.className='prev-item';if(f.type.startsWith('image/')){const img=document.createElement('img');img.src=URL.createObjectURL(f);d.appendChild(img);}else{const vid=document.createElement('video');vid.src=URL.createObjectURL(f);vid.muted=true;d.appendChild(vid);}const rm=document.createElement('button');rm.className='rm';rm.textContent='×';rm.onclick=()=>{mediaFs.splice(i,1);d.remove();};d.appendChild(rm);p.appendChild(d);});};
+
+// ── SUBMIT
+window.submitStory=async()=>{
+  if(!user){toast('Please sign in first.','error');return;}
+  const title=document.getElementById('f-title').value.trim();
+  const cat=document.getElementById('f-cat').value;
+  const date=document.getElementById('f-date').value;
+  const loc=document.getElementById('f-loc').value.trim();
+  const body=document.getElementById('f-body').value.trim();
+  const name=document.getElementById('f-name').value.trim();
+  const agreed=document.getElementById('f-agree').checked;
+  if(!selfieB64){document.getElementById('selfie-err').style.display='block';toast('Selfie is required!','error');return;}
+  if(!title||!cat||!date||!loc||!body||!name){toast('Please fill all required fields.','error');return;}
+  if(!agreed){toast('Please accept the declaration.','error');return;}
+  if(!mediaFs.length){toast('Please upload at least one photo.','error');return;}
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='⏳ Uploading…';
+  document.getElementById('submit-status').textContent='Uploading files, please wait…';
+  try{
+    const blob=await fetch(selfieB64).then(r=>r.blob());
+    const sref=ref(st,`selfies/${user.uid}/${Date.now()}.jpg`);
+    await uploadBytes(sref,blob);
+    const selfieURL=await getDownloadURL(sref);
+    const media=[];
+    for(const f of mediaFs){const fr=ref(st,`submissions/${user.uid}/${Date.now()}_${f.name}`);await uploadBytes(fr,f);const url=await getDownloadURL(fr);media.push({url,type:f.type.startsWith('image/')?'image':'video',name:f.name});}
+    await addDoc(collection(db,'submissions'),{uid:user.uid,reporterName:name,reporterEmail:user.email,reporterPhoto:user.photoURL||'',selfieURL,title,category:cat,date,time:document.getElementById('f-time').value,location:loc,body,contact:document.getElementById('f-contact').value,media,status:'pending',submittedAt:serverTimestamp()});
+    await updateDoc(doc(db,'users',user.uid),{submittedCount:increment(1)});
+    toast('✅ Story submitted! Review within 24 hours.');
+    clearForm();
+    document.querySelectorAll('.portal-tab')[1].click();
+  }catch(e){toast('Failed: '+e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='🚀 Submit Story for Review';document.getElementById('submit-status').textContent='';}
+};
+
+function clearForm(){['f-title','f-cat','f-date','f-loc','f-body','f-time','f-contact'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-agree').checked=false;selfieB64=null;mediaFs=[];document.getElementById('media-prev').innerHTML='';retakeSelfie();}
+
+// ── MY STORIES
+async function loadMy(){
+  if(!user)return;
+  const us=await getDoc(doc(db,'users',user.uid));
+  const ud=us.exists()?us.data():{};
+  const pub=ud.publishedCount||0,sub=ud.submittedCount||0;
+  const b=badge(pub);
+  document.getElementById('prof-card').innerHTML=`<div class="prof-card"><img class="prof-av" src="${user.photoURL||''}" alt="${user.displayName}"><div><div class="prof-name">${user.displayName}</div><div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:2px;">${user.email}</div><div style="margin-top:8px;"><span class="badge ${b.c}">${b.i} ${b.l}</span></div><div style="display:flex;gap:20px;margin-top:12px;"><div><div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:white;">${sub}</div><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;">Submitted</div></div><div><div style="font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--red);">${pub}</div><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;">Published</div></div></div>${pub>0?`<div style="margin-top:10px;"><div class="prog-wrap" style="width:180px;"><div class="prog-bar" style="width:${Math.min(100,(pub/50)*100)}%"></div></div><div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:2px;">${pub}/50 to Chief Reporter</div></div>`:''}</div></div>`;
+  const q=query(collection(db,'submissions'),where('uid','==',user.uid),orderBy('submittedAt','desc'));
+  const snap=await getDocs(q);
+  const el=document.getElementById('my-list');
+  if(snap.empty){el.innerHTML='<p style="color:var(--gray-500);font-size:14px;padding:16px 0;">No stories yet! Go to Submit News.</p>';return;}
+  const lbl={pending:'⏳ Under Review',approved:'✅ Published',rejected:'❌ Not Approved'};
+  el.innerHTML=snap.docs.map(d=>{const s=d.data();return`<div class="sub-card ${s.status||'pending'}"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;"><span class="sub-status ${s.status||'pending'}">${lbl[s.status]||'⏳ Under Review'}</span><span style="font-size:11px;color:var(--gray-500);">${s.submittedAt?.toDate?.()?.toLocaleDateString('en-IN','short')||'—'}</span></div><div style="font-family:var(--font-d);font-size:15px;font-weight:700;margin:7px 0 4px;">${s.title}</div><div style="font-size:12px;color:var(--gray-500);">📂 ${s.category} · 📍 ${s.location} · 📅 ${s.date}</div>${s.status==='rejected'&&s.rejectReason?`<div style="margin-top:7px;background:#f8d7da;padding:7px 10px;font-size:12px;color:#721c24;border-radius:2px;">Reason: ${s.rejectReason}</div>`:''}</div>`;}).join('');
+}
+
+// ── LEADERBOARD
+async function loadLB(){
+  const q=query(collection(db,'users'),orderBy('publishedCount','desc'));
+  const snap=await getDocs(q);
+  const el=document.getElementById('lb-list');
+  const users=snap.docs.filter(d=>(d.data().publishedCount||0)>0);
+  if(!users.length){el.innerHTML='<p style="color:var(--gray-500);font-size:14px;padding:16px 0;">No contributors yet. Be first!</p>';return;}
+  const rc=['gold','silver','bronze'];
+  el.innerHTML=users.slice(0,20).map((d,i)=>{const u=d.data();const b=badge(u.publishedCount||0);return`<div class="lb-item"><div class="lb-rank ${rc[i]||''}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><img class="lb-av" src="${u.photo||''}" alt="${u.name}" onerror="this.style.display='none'"><div><div class="lb-name">${u.name||'Anonymous'} <span class="badge ${b.c}" style="font-size:10px;padding:2px 8px;">${b.i} ${b.l}</span></div><div class="lb-meta">📰 ${u.submittedCount||0} submitted</div></div><div><div class="lb-score">${u.publishedCount||0}</div><div class="lb-pts">published</div></div></div>`;}).join('');
+}
+
+// ── PEOPLE'S NEWS
+async function loadPN(){
+  const q=query(collection(db,'submissions'),where('status','==','approved'),orderBy('submittedAt','desc'));
+  const snap=await getDocs(q);
+  const el=document.getElementById('pn-list');
+  if(snap.empty){el.innerHTML='<p style="color:var(--gray-500);font-size:14px;padding:16px 0;grid-column:1/-1;">No community stories yet. Be the first!</p>';return;}
+  el.innerHTML=snap.docs.map(d=>{const s=d.data();const img=s.media?.find(m=>m.type==='image');return`<div class="pn-card"><div class="pn-img">${img?`<img src="${img.url}" alt="${s.title}" loading="lazy">`:'<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--gray-300);">📷</div>'}</div><div class="pn-body"><div class="pn-cat">${s.category}</div><div class="pn-title">${s.title}</div><div style="font-size:12px;color:var(--gray-500);">📍 ${s.location} · 📅 ${s.date}</div><div class="pn-rep"><img class="rep-selfie" src="${s.selfieURL}" alt="${s.reporterName}" onerror="this.style.display='none'"><div><div class="rep-name">📝 ${s.reporterName}</div><div class="rep-badge-s">Community Reporter</div></div></div></div></div>`;}).join('');
+}
+
+// ── STATS
+async function loadStats(){
+  try{
+    const[a,p,u]=await Promise.all([getDocs(collection(db,'submissions')),getDocs(query(collection(db,'submissions'),where('status','==','approved'))),getDocs(collection(db,'users'))]);
+    document.getElementById('sSub').textContent=a.size;
+    document.getElementById('sPub').textContent=p.size;
+    document.getElementById('sCon').textContent=u.size;
+  }catch(e){}
+}
+loadStats();
+</script>
+</body>
+</html>
