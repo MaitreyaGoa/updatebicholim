@@ -516,467 +516,340 @@
   </div>
 </div>
 
-<script>
-const STORAGE_KEY = 'ub_admin_data';
-const WEATHER_ICONS = { Clear:'☀️', Clouds:'⛅', Rain:'🌧️', Drizzle:'🌦️', Thunderstorm:'⛈️', Snow:'❄️', Mist:'🌫️', Haze:'🌫️', Fog:'🌫️' };
+<script type="module">
+// ================================================================
+// UPDATE BICHOLIM — MAIN SITE
+// Reads ALL data from Firestore in real-time
+// ================================================================
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, collection, onSnapshot, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const FB = {
+  apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+  authDomain: "update-bicholim.firebaseapp.com",
+  projectId: "update-bicholim",
+  storageBucket: "update-bicholim.firebasestorage.app",
+  messagingSenderId: "430335270267",
+  appId: "1:430335270267:web:6bd9d92f267f98d10eb1de"
+};
+
+const app = initializeApp(FB);
+const db  = getFirestore(app);
+
+const WX_ICONS = { Clear:'☀️', Clouds:'⛅', Rain:'🌧️', Drizzle:'🌦️', Thunderstorm:'⛈️', Snow:'❄️', Mist:'🌫️', Haze:'🌫️', Fog:'🌫️' };
+
+let siteData = {};
+let articles  = [];
 
 function timeAgo(ts) {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
-  if (m < 1) return 'Just now';
-  if (m < 60) return m + ' min ago';
-  if (h < 24) return h + ' hr ago';
-  return d + ' day' + (d>1?'s':'') + ' ago';
+  const diff = Date.now()-ts;
+  const m=Math.floor(diff/60000),h=Math.floor(diff/3600000),d=Math.floor(diff/86400000);
+  if(m<1)return'Just now'; if(m<60)return m+' min ago'; if(h<24)return h+' hr ago';
+  return d+' day'+(d>1?'s':'')+' ago';
 }
 
-function getData() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
-}
+// ── REAL-TIME LISTENERS ─────────────────────────────────────────
 
-function renderTicker(data) {
-  const items = data.ticker || [];
+// 1. Site data (ticker, weather, events, classifieds, live feed)
+onSnapshot(doc(db,'sitedata','main'), snap => {
+  if (!snap.exists()) return;
+  siteData = snap.data();
+  renderTicker();
+  renderLive();
+  renderClassifieds();
+  renderEvents();
+  renderGallery();
+  // Update WhatsApp link
+  if (siteData.site?.wa) document.getElementById('waLink').href = siteData.site.wa;
+  // Load weather when key arrives
+  if (siteData.weather?.key) loadWeather();
+});
+
+// 2. Articles
+onSnapshot(query(collection(db,'articles'), orderBy('date','desc')), snap => {
+  articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderHero();
+  renderLatest();
+  renderMore();
+  renderTrend();
+  renderOpinion();
+});
+
+// 3. People's news (approved community submissions)
+onSnapshot(query(collection(db,'submissions'), where('status','==','approved'), orderBy('submittedAt','desc'), limit(8)), snap => {
+  renderPeopleNews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+});
+
+// ── RENDER FUNCTIONS ────────────────────────────────────────────
+
+function renderTicker() {
+  const items = siteData.ticker||[];
   if (!items.length) return;
   const doubled = [...items, ...items];
-  document.getElementById('tickerInner').innerHTML = doubled.map(t => `<span class="ticker-item">${t}</span>`).join('');
+  document.getElementById('tickerInner').innerHTML = doubled.map(t=>`<span class="ticker-item">${t}</span>`).join('');
 }
 
-function renderHero(articles) {
-  const heroArts = articles.filter(a => a.hero && a.status === 'published');
-  const published = articles.filter(a => a.status === 'published');
-  const main = heroArts[0] || published[0];
-  const sides = published.slice(1, 3);
-  if (!main) { document.getElementById('heroSection').innerHTML = '<div class="empty-placeholder"><div class="icon">📰</div>No featured stories yet. Add articles from the admin portal.</div>'; return; }
-  const sideHTML = sides.map(s => `
-    <article class="side-card" onclick="openArticle('${s.id}')">
-      ${s.image ? `<img src="${s.image}" alt="${s.title}" loading="lazy">` : `<div style="background:var(--charcoal);height:100%;min-height:190px;"></div>`}
-      <div class="side-card-content">
-        <span class="side-badge">${s.category}</span>
-        <h2 class="side-title">${s.title}</h2>
+function renderHero() {
+  const published = articles.filter(a=>a.status==='published');
+  const main = published.find(a=>a.hero) || published[0];
+  const sides = published.filter(a=>a.id!==main?.id).slice(0,2);
+  if (!main) { document.getElementById('heroSec').innerHTML='<div class="empty-state"><div class="ei">📰</div>No featured stories yet.</div>'; return; }
+  document.getElementById('heroSec').innerHTML = `<div class="hero-grid">
+    <article class="hero-main" onclick="openArt('${main.id}')">
+      ${main.image?`<img src="${main.image}" alt="${main.title}" loading="eager">`:`<div style="background:var(--charcoal);height:100%;min-height:420px;display:flex;align-items:center;justify-content:center;font-size:48px;">📰</div>`}
+      <div class="hero-main-body">
+        <span class="hbadge">${main.breaking?'🔴 Breaking':main.category}</span>
+        <h1 class="hero-title">${main.title}</h1>
+        <div class="hero-meta">By ${main.author||'Staff Reporter'} &nbsp;·&nbsp; ${timeAgo(main.date)} &nbsp;·&nbsp; ${main.category}</div>
       </div>
     </article>
-  `).join('');
-  document.getElementById('heroSection').innerHTML = `
-    <div class="hero-grid">
-      <article class="hero-main" onclick="openArticle('${main.id}')">
-        ${main.image ? `<img src="${main.image}" alt="${main.title}" loading="lazy">` : `<div style="background:var(--charcoal);height:100%;min-height:440px;display:flex;align-items:center;justify-content:center;font-size:48px;">📰</div>`}
-        <div class="hero-main-content">
-          <span class="hero-badge">${main.breaking ? '🔴 Breaking News' : main.category}</span>
-          <h1 class="hero-title">${main.title}</h1>
-          <div class="hero-meta">By ${main.author || 'Staff Reporter'} &nbsp;·&nbsp; ${timeAgo(main.date)} &nbsp;·&nbsp; ${main.category}</div>
+    <div>${sides.map(s=>`<article class="side-card" onclick="openArt('${s.id}')">
+      ${s.image?`<img src="${s.image}" alt="${s.title}" loading="lazy">`:`<div style="background:var(--charcoal);height:100%;min-height:175px;"></div>`}
+      <div class="side-card-body"><span class="sbadge">${s.category}</span><h2 class="side-title">${s.title}</h2></div>
+    </article>`).join('')||'<div style="background:var(--charcoal);height:350px;"></div>'}</div>
+  </div>`;
+}
+
+function renderLatest() {
+  const pub = articles.filter(a=>a.status==='published').slice(0,6);
+  const el  = document.getElementById('latestGrid');
+  if (!pub.length) { el.innerHTML='<div class="empty-state" style="grid-column:span 3"><div class="ei">📰</div>No articles yet.</div>'; return; }
+  el.innerHTML = pub.map(a=>`<article class="ncard" onclick="openArt('${a.id}')">
+    <div class="ncard-img">${a.image?`<img src="${a.image}" alt="${a.title}" loading="lazy">`:'<div style="height:100%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>'}<span class="ncat">${a.category}</span></div>
+    <h3 class="ncard-title">${a.title}</h3>
+    <p class="ncard-exc">${a.excerpt||''}</p>
+    <div class="ncard-meta"><span>${timeAgo(a.date)}</span><span>·</span><span>${a.author||'Staff Reporter'}</span></div>
+  </article>`).join('');
+}
+
+function renderMore() {
+  const more = articles.filter(a=>a.status==='published').slice(6,14);
+  const el   = document.getElementById('moreList');
+  if (!more.length) { el.innerHTML='<div class="empty-state"><div class="ei">📰</div>No more articles.</div>'; return; }
+  el.innerHTML = more.map(a=>`<div class="lnews-item" onclick="openArt('${a.id}')">
+    <div class="lnews-thumb">${a.image?`<img src="${a.image}" loading="lazy">`:'<div style="height:100%;background:var(--g100);"></div>'}</div>
+    <div><div class="lcat">${a.category}</div><h3 class="lnews-title">${a.title}</h3><div class="lnews-meta">${timeAgo(a.date)} · ${a.author||'Staff Reporter'}</div></div>
+  </div>`).join('');
+}
+
+function renderLive() {
+  const feed = siteData.liveFeed||[];
+  const el   = document.getElementById('liveSec');
+  if (!feed.length) { el.innerHTML='<div class="empty-state"><div class="ei">⚡</div>No live updates right now.</div>'; return; }
+  el.innerHTML = feed.map(f=>`<div class="live-item"><div class="live-time">${f.time}</div><div class="live-text">${f.text}</div></div>`).join('');
+}
+
+function renderTrend() {
+  const top = articles.filter(a=>a.status==='published').slice(0,5);
+  const el  = document.getElementById('trendList');
+  if (!top.length) { el.innerHTML='<div class="empty-state"><div class="ei">📈</div>No trending yet.</div>'; return; }
+  el.innerHTML = top.map((a,i)=>`<div class="trend-item" onclick="openArt('${a.id}')">
+    <div class="trend-num">0${i+1}</div>
+    <div><div class="trend-title">${a.title}</div><div class="trend-time">${timeAgo(a.date)}</div></div>
+  </div>`).join('');
+}
+
+function renderClassifieds() {
+  const items = siteData.classifieds||[];
+  const el    = document.getElementById('clSec');
+  if (!items.length) { el.innerHTML='<div class="empty-state"><div class="ei">📋</div>No notices yet.</div>'; return; }
+  const bmap={notice:'cl-notice',tender:'cl-tender',lost:'cl-lost',event:'cl-event'};
+  const lmap={notice:'Govt Notice',tender:'Tender',lost:'Lost & Found',event:'Event',job:'Job'};
+  el.innerHTML = items.map(c=>`<div class="cl-item"><span class="cl-badge ${bmap[c.type]||'cl-notice'}">${lmap[c.type]||c.type}</span><p class="cl-text">${c.text}</p></div>`).join('');
+}
+
+function renderEvents() {
+  const evs = (siteData.events||[]).filter(e=>new Date(e.date+'T00:00:00')>=new Date(new Date().setHours(0,0,0,0)));
+  const el  = document.getElementById('evSec');
+  if (!evs.length) { el.innerHTML='<div class="empty-state"><div class="ei">📅</div>No upcoming events.</div>'; return; }
+  el.innerHTML = evs.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,5).map(ev=>{
+    const d=new Date(ev.date+'T00:00:00');
+    return `<div class="ev-item"><div class="ev-date"><div class="ev-day">${d.getDate()}</div><div class="ev-mon">${d.toLocaleString('default',{month:'short'})}</div></div><div><div class="ev-name">${ev.name}</div><div class="ev-place">📍 ${ev.place}</div></div></div>`;
+  }).join('');
+}
+
+function renderGallery() {
+  const photos = siteData.gallery||[];
+  const el     = document.getElementById('galSec');
+  if (!photos.length) { el.innerHTML='<div class="empty-state"><div class="ei">🖼️</div>No gallery photos yet.</div>'; return; }
+  el.innerHTML = `<div class="gal-grid">${photos.slice(0,7).map(g=>`<div class="gal-item"><img src="${g.src}" alt="${g.caption||''}" loading="lazy"><div class="gal-ov">${g.caption||''}</div></div>`).join('')}</div>`;
+}
+
+function renderOpinion() {
+  const ops = articles.filter(a=>a.category==='Opinion'&&a.status==='published').slice(0,3);
+  const el  = document.getElementById('opSec');
+  if (!ops.length) { el.innerHTML='<div class="empty-state"><div class="ei">✍️</div>No opinion pieces yet.</div>'; return; }
+  const cols=['#BB1919','#1A5C9A','#2D7A2D'];
+  el.innerHTML = `<div class="op-grid">${ops.map((a,i)=>`<article class="op-card" onclick="openArt('${a.id}')">
+    <div class="op-author-row"><div class="op-avatar" style="background:${cols[i%cols.length]}">${(a.author||'?')[0].toUpperCase()}</div>
+    <div><div class="op-aname">${a.author||'Staff Reporter'}</div><div class="op-arole">Contributor</div></div></div>
+    <h3 class="op-title">"${a.title}"</h3><p class="op-exc">${a.excerpt||''}</p>
+  </article>`).join('')}</div>`;
+}
+
+function renderPeopleNews(items) {
+  const el = document.getElementById('peopleNewsGrid');
+  if (!el) return;
+  if (!items.length) { el.innerHTML='<p style="color:rgba(255,255,255,.4);font-size:13px;grid-column:1/-1;">No community stories yet. <a href="people/index.html" style="color:var(--red)">Be the first!</a></p>'; return; }
+  el.innerHTML = items.map(s=>{
+    const img = s.media?.find(m=>m.type==='image');
+    return `<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);overflow:hidden;cursor:pointer;" onclick='openPeopleArt(${JSON.stringify(s).replace(/'/g,"&#39;")})'>
+      <div style="height:120px;overflow:hidden;background:rgba(255,255,255,.05);">${img?`<img src="${img.url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`:'<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.2);">📷</div>'}</div>
+      <div style="padding:11px;">
+        <div style="font-family:var(--fu);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:4px;">${s.category}</div>
+        <div style="font-family:var(--fd);font-size:13px;font-weight:700;line-height:1.3;color:#fff;margin-bottom:5px;">${s.title}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35);">📍 ${s.location}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);">
+          <img src="${s.selfieURL||''}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+          <span style="font-family:var(--fu);font-size:10px;font-weight:600;color:rgba(255,255,255,.65);">📝 ${s.reporterName}</span>
         </div>
-      </article>
-      <div class="hero-side">${sideHTML || '<div style="background:var(--charcoal);flex:1;min-height:190px;"></div><div style="background:#111;flex:1;min-height:190px;"></div>'}</div>
-    </div>`;
-}
-
-function renderLatestGrid(articles) {
-  const latest = articles.filter(a => a.status === 'published').slice(0, 6);
-  const grid = document.getElementById('latestGrid');
-  if (!latest.length) { grid.innerHTML = '<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>No published articles yet.</div>'; return; }
-  grid.innerHTML = latest.map(a => `
-    <article class="news-card" onclick="openArticle('${a.id}')">
-      <div class="news-card-img">
-        ${a.image ? `<img src="${a.image}" alt="${a.title}" loading="lazy">` : `<div style="height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:32px;">📷</div>`}
-        <span class="news-card-cat">${a.category}</span>
       </div>
-      <h3 class="news-card-title">${a.title}</h3>
-      <p class="news-card-excerpt">${a.excerpt || ''}</p>
-      <div class="news-card-meta"><span>${timeAgo(a.date)}</span><span>·</span><span>${a.author || 'Staff Reporter'}</span></div>
-    </article>
-  `).join('');
-}
-
-function renderMoreNews(articles) {
-  const more = articles.filter(a => a.status === 'published').slice(6, 12);
-  const el = document.getElementById('moreNewsList');
-  if (!more.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📰</div>No more articles.</div>'; return; }
-  el.innerHTML = more.map(a => `
-    <div class="list-news-item" onclick="openArticle('${a.id}')">
-      <div class="list-news-thumb">${a.image ? `<img src="${a.image}" alt="${a.title}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;">📷</div>'}</div>
-      <div><div class="list-cat">${a.category}</div><h3 class="list-title">${a.title}</h3><div class="list-meta">${timeAgo(a.date)} · ${a.author || 'Staff Reporter'}</div></div>
-    </div>
-  `).join('');
-}
-
-function renderLiveFeed(data) {
-  const feed = data.liveFeed || [];
-  const el = document.getElementById('liveFeedSection');
-  if (!feed.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">⚡</div>No live updates right now.</div>'; return; }
-  el.innerHTML = feed.map(item => `
-    <div class="live-item">
-      <div class="live-time">${item.time}</div>
-      <div class="live-text">${item.text}</div>
-    </div>
-  `).join('');
-}
-
-function renderTrending(articles) {
-  const top = articles.filter(a => a.status === 'published').slice(0, 5);
-  const el = document.getElementById('trendingList');
-  if (!top.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📈</div>No trending stories yet.</div>'; return; }
-  el.innerHTML = top.map((a, i) => `
-    <div class="trending-item" onclick="openArticle('${a.id}')">
-      <div class="trending-num">0${i+1}</div>
-      <div><div class="trending-title">${a.title}</div><div class="trending-time">${timeAgo(a.date)}</div></div>
-    </div>
-  `).join('');
-}
-
-function renderClassifieds(data) {
-  const items = data.classifieds || [];
-  const el = document.getElementById('classifiedsSection');
-  if (!items.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📋</div>No notices yet.</div>'; return; }
-  const badgeMap = { notice:'badge-notice', tender:'badge-tender', lost:'badge-lost', event:'badge-event' };
-  const labelMap = { notice:'Govt Notice', tender:'Tender', lost:'Lost & Found', event:'Event', job:'Job' };
-  el.innerHTML = items.map(c => `
-    <div class="classified-item">
-      <span class="classified-badge ${badgeMap[c.type]||'badge-notice'}">${labelMap[c.type]||c.type}</span>
-      <p class="classified-text">${c.text}</p>
-    </div>
-  `).join('');
-}
-
-function renderEvents(data) {
-  const events = (data.events || []).filter(e => new Date(e.date+'T00:00:00') >= new Date(new Date().setHours(0,0,0,0)));
-  const el = document.getElementById('eventsSection');
-  if (!events.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📅</div>No upcoming events.</div>'; return; }
-  el.innerHTML = events.sort((a,b) => new Date(a.date)-new Date(b.date)).slice(0,5).map(ev => {
-    const d = new Date(ev.date+'T00:00:00');
-    return `<div class="event-item">
-      <div class="event-date-box"><div class="event-day">${d.getDate()}</div><div class="event-month">${d.toLocaleString('default',{month:'short'})}</div></div>
-      <div><div class="event-name">${ev.name}</div><div class="event-place">📍 ${ev.place}</div></div>
     </div>`;
   }).join('');
 }
 
-function renderGallery(data) {
-  const photos = data.gallery || [];
-  const el = document.getElementById('gallerySection');
-  if (!photos.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">🖼️</div>No gallery photos yet.</div>'; return; }
-  el.innerHTML = `<div class="gallery-grid">${photos.slice(0,7).map(g => `
-    <div class="gallery-item">
-      <img src="${g.src}" alt="${g.caption||''}" loading="lazy">
-      <div class="gallery-overlay">${g.caption||''}</div>
-    </div>`).join('')}</div>`;
-}
-
-function renderOpinion(articles) {
-  const opinions = articles.filter(a => a.category === 'Opinion' && a.status === 'published').slice(0,3);
-  const el = document.getElementById('opinionSection');
-  if (!opinions.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">✍️</div>No opinion pieces yet.</div>'; return; }
-  const colors = ['#BB1919','#1A5C9A','#2D7A2D'];
-  el.innerHTML = `<div class="opinion-grid">${opinions.map((a,i) => `
-    <article class="opinion-card" onclick="openArticle('${a.id}')">
-      <div class="author-row">
-        <div class="author-avatar" style="background:${colors[i%colors.length]}">${(a.author||'?')[0].toUpperCase()}</div>
-        <div><div class="author-name">${a.author||'Staff Reporter'}</div><div class="author-role">Contributor</div></div>
-      </div>
-      <h3 class="opinion-title">"${a.title}"</h3>
-      <p class="opinion-excerpt">${a.excerpt||''}</p>
-    </article>`).join('')}</div>`;
-}
-
-// Article viewer modal
-function openArticle(id) {
-  const data = getData();
-  const art = (data.articles||[]).find(a => a.id === id);
-  if (!art) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.style.alignItems = 'flex-start';
-  overlay.style.overflowY = 'auto';
-  overlay.style.paddingTop = '40px';
-  overlay.innerHTML = `
-    <div class="modal" style="max-width:680px;width:90%;padding:0;overflow:hidden;">
-      <button class="modal-close" style="top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);color:white;width:30px;height:30px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;" onclick="this.closest('.modal-overlay').remove();document.body.style.overflow=''">×</button>
-      ${art.image ? `<img src="${art.image}" style="width:100%;height:280px;object-fit:cover;" alt="${art.title}">` : ''}
-      <div style="padding:28px;">
-        <div style="font-family:var(--font-ui);font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">${art.category}</div>
-        <h2 style="font-family:var(--font-display);font-size:clamp(20px,3vw,28px);font-weight:700;line-height:1.25;margin-bottom:12px;">${art.title}</h2>
-        <div style="font-family:var(--font-ui);font-size:12px;color:var(--gray-500);margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--gray-100);">
-          By <strong>${art.author||'Staff Reporter'}</strong> &nbsp;·&nbsp; ${new Date(art.date).toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
-          ${art.location ? ` &nbsp;·&nbsp; 📍 ${art.location}` : ''}
-        </div>
-        <div style="font-size:15px;line-height:1.75;color:var(--gray-700);">${(art.body||art.excerpt||'No content.').replace(/\n\n/g,'</p><p style="margin-bottom:14px;">').replace(/\n/g,'<br>')}</div>
-        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--gray-100);display:flex;gap:10px;">
-          <a href="https://wa.me/?text=${encodeURIComponent(art.title+' - updatebicholim.com')}" target="_blank" style="display:flex;align-items:center;gap:6px;background:#25D366;color:white;padding:8px 14px;font-family:var(--font-ui);font-size:12px;font-weight:600;border-radius:3px;">💬 Share on WhatsApp</a>
-        </div>
-      </div>
-    </div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
-  document.body.appendChild(overlay);
-  document.body.style.overflow = 'hidden';
-}
-
-// Weather
+// ── WEATHER ─────────────────────────────────────────────────────
 async function loadWeather() {
-  let data = getData();
-  let key  = data.weather?.key;
-  let city = data.weather?.city || 'Bicholim,IN';
-
-  // If no key in localStorage, try fetching directly from Firestore
+  const key  = siteData.weather?.key;
+  const city = siteData.weather?.city || 'Bicholim,IN';
   if (!key) {
-    try {
-      const { initializeApp: ia2, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-      const { getFirestore: gf2, doc: d2, getDoc: gd2 } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-      const existingApp = getApps().find(a => a.name === 'mainsite') || getApps()[0];
-      if (existingApp) {
-        const db2 = gf2(existingApp);
-        const snap = await gd2(d2(db2, 'sitedata', 'main'));
-        if (snap.exists() && snap.data().weather?.key) {
-          key  = snap.data().weather.key;
-          city = snap.data().weather.city || 'Bicholim,IN';
-          // Save to localStorage for next time
-          const merged = {...data, weather: snap.data().weather};
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-        }
-      }
-    } catch(e) { console.log('Weather Firestore fallback:', e); }
-  }
-
-  if (!key) {
-    document.getElementById('wDesc').textContent = 'Set up weather in Admin → Weather';
-    document.getElementById('headerWeatherDesc').textContent = '⛅ Bicholim';
+    document.getElementById('wDesc').textContent = 'Set up in Admin → Weather';
+    document.getElementById('hWxDesc').textContent = '⛅ Bicholim';
     return;
   }
   try {
-    const [curr, fore] = await Promise.all([
+    const [curr,fore] = await Promise.all([
       fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`).then(r=>r.json()),
       fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${key}&units=metric&cnt=9`).then(r=>r.json())
     ]);
-    if (curr.cod !== 200) return;
-    const icon = WEATHER_ICONS[curr.weather[0].main] || '🌡️';
-    const temp = Math.round(curr.main.temp);
-    const desc = curr.weather[0].description.charAt(0).toUpperCase() + curr.weather[0].description.slice(1);
-    document.getElementById('wTemp').textContent   = temp + '°C';
-    document.getElementById('wDesc').textContent   = desc;
-    document.getElementById('wIcon').textContent   = icon;
-    document.getElementById('wHum').textContent    = `💧 Humidity ${curr.main.humidity}%`;
-    document.getElementById('wWind').textContent   = `💨 Wind ${Math.round(curr.wind.speed * 3.6)} km/h`;
-    document.getElementById('headerTemp').textContent = temp + '°';
-    document.getElementById('headerWeatherDesc').textContent = `${icon} ${desc} · Bicholim`;
-    // Forecast
+    if (curr.cod!==200) return;
+    const ic   = WX_ICONS[curr.weather[0].main]||'🌡️';
+    const tmp  = Math.round(curr.main.temp);
+    const desc = curr.weather[0].description.charAt(0).toUpperCase()+curr.weather[0].description.slice(1);
+    document.getElementById('wTemp').textContent  = tmp+'°C';
+    document.getElementById('wDesc').textContent  = desc;
+    document.getElementById('wIcon').textContent  = ic;
+    document.getElementById('wHum').textContent   = '💧 Humidity '+curr.main.humidity+'%';
+    document.getElementById('wWind').textContent  = '💨 Wind '+Math.round(curr.wind.speed*3.6)+' km/h';
+    document.getElementById('hTemp').textContent  = tmp+'°';
+    document.getElementById('hWxDesc').textContent = ic+' '+desc+' · Bicholim';
     if (fore.list) {
-      const days = {};
-      fore.list.forEach(f => {
-        const d = new Date(f.dt*1000).toLocaleDateString('en-IN',{weekday:'short'});
-        if (!days[d]) days[d] = { icon: WEATHER_ICONS[f.weather[0].main]||'🌡️', temp: Math.round(f.main.temp) };
+      const days={};
+      fore.list.forEach(f=>{
+        const d=new Date(f.dt*1000).toLocaleDateString('en-IN',{weekday:'short'});
+        if(!days[d])days[d]={ic:WX_ICONS[f.weather[0].main]||'🌡️',t:Math.round(f.main.temp)};
       });
-      document.getElementById('wForecast').innerHTML = Object.entries(days).slice(0,3).map(([d,v]) => `<span>${d} ${v.icon} ${v.temp}°</span>`).join(' &nbsp;|&nbsp; ');
+      document.getElementById('wFore').innerHTML = Object.entries(days).slice(0,3).map(([d,v])=>`<span>${d} ${v.ic} ${v.t}°</span>`).join('');
     }
-  } catch(e) { console.log('Weather load failed', e); }
+  } catch(e) { console.log('Weather error:',e); }
 }
 
-// Render everything
-function renderAll() {
-  const data = getData();
-  const articles = data.articles || [];
-  document.getElementById('todayDate').textContent = '📅 ' + new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  if (data.site?.wa) document.getElementById('waLink').href = data.site.wa;
-  renderTicker(data);
-  renderHero(articles);
-  renderLatestGrid(articles);
-  renderMoreNews(articles);
-  renderLiveFeed(data);
-  renderTrending(articles);
-  renderClassifieds(data);
-  renderEvents(data);
-  renderGallery(data);
-  renderOpinion(articles);
-}
+// ── ARTICLE VIEWER ───────────────────────────────────────────────
+window.openArt = (id) => {
+  const art = articles.find(a=>a.id===id);
+  if (!art) return;
+  document.getElementById('artBox').innerHTML = `
+    ${art.image?`<img src="${art.image}" style="width:100%;height:260px;object-fit:cover;">`:''}
+    <div style="padding:24px;">
+      <div style="font-family:var(--fu);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:7px;">${art.category}</div>
+      <h2 style="font-family:var(--fd);font-size:clamp(18px,3vw,26px);font-weight:700;line-height:1.25;margin-bottom:10px;">${art.title}</h2>
+      <div style="font-family:var(--fu);font-size:11px;color:var(--g500);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--g100);">
+        By <strong>${art.author||'Staff Reporter'}</strong> &nbsp;·&nbsp; ${new Date(art.date).toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+        ${art.location?` &nbsp;·&nbsp; 📍 ${art.location}`:''}
+      </div>
+      <div style="font-size:14px;line-height:1.75;color:var(--g700);">${(art.body||art.excerpt||'').replace(/
 
-function filterCat(cat) {
-  const data = getData();
-  const filtered = (data.articles||[]).filter(a => a.category === cat && a.status === 'published');
-  const grid = document.getElementById('latestGrid');
-  if (!filtered.length) { grid.innerHTML = `<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>No articles in ${cat} yet.</div>`; return; }
-  grid.innerHTML = filtered.slice(0,6).map(a => `
-    <article class="news-card" onclick="openArticle('${a.id}')">
-      <div class="news-card-img">${a.image ? `<img src="${a.image}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);"></div>'}<span class="news-card-cat">${a.category}</span></div>
-      <h3 class="news-card-title">${a.title}</h3>
-      <p class="news-card-excerpt">${a.excerpt||''}</p>
-      <div class="news-card-meta"><span>${timeAgo(a.date)}</span></div>
-    </article>`).join('');
-  window.scrollTo({top: 500, behavior: 'smooth'});
-}
-
-function doSearch(query) {
-  if (!query) return;
-  const data = getData();
-  const q = query.toLowerCase();
-  const results = (data.articles||[]).filter(a => a.status==='published' && (a.title.toLowerCase().includes(q) || (a.excerpt||'').toLowerCase().includes(q)));
-  const grid = document.getElementById('latestGrid');
-  if (!results.length) { grid.innerHTML = `<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">🔍</div>No results for "${query}".</div>`; return; }
-  grid.innerHTML = results.slice(0,6).map(a => `
-    <article class="news-card" onclick="openArticle('${a.id}')">
-      <div class="news-card-img">${a.image ? `<img src="${a.image}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);"></div>'}<span class="news-card-cat">${a.category}</span></div>
-      <h3 class="news-card-title">${a.title}</h3>
-      <p class="news-card-excerpt">${a.excerpt||''}</p>
-      <div class="news-card-meta"><span>${timeAgo(a.date)}</span></div>
-    </article>`).join('');
-  window.scrollTo({top: 500, behavior: 'smooth'});
-}
-
-function toggleDark() {
-  const isDark = document.body.getAttribute('data-dark') === 'true';
-  document.body.setAttribute('data-dark', !isDark);
-  document.querySelector('.dark-toggle').textContent = isDark ? '🌙' : '☀️';
-}
-function setLang(lang, btn) {
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-document.getElementById('hamburgerBtn').addEventListener('click', () => {
-  document.getElementById('mobileNav').classList.add('open');
-  document.getElementById('mobileOverlay').classList.add('open');
+/g,'</p><p style="margin-bottom:12px;">').replace(/
+/g,'<br>')}</div>
+      <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--g100);display:flex;gap:8px;">
+        <a href="https://wa.me/?text=${encodeURIComponent(art.title+' – updatebicholim.com')}" target="_blank" style="display:flex;align-items:center;gap:5px;background:#25D366;color:#fff;padding:7px 13px;font-family:var(--fu);font-size:11px;font-weight:700;border-radius:2px;">💬 WhatsApp</a>
+        <button onclick="closeArt()" style="background:var(--g100);border:none;padding:7px 13px;font-family:var(--fu);font-size:11px;cursor:pointer;border-radius:2px;">✕ Close</button>
+      </div>
+    </div>`;
+  document.getElementById('artModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+};
+
+window.closeArt = () => { document.getElementById('artModal').classList.remove('open'); document.body.style.overflow=''; };
+
+window.openPeopleArt = (s) => {
+  const img = s.media?.find(m=>m.type==='image');
+  document.getElementById('artBox').innerHTML = `
+    ${img?`<img src="${img.url}" style="width:100%;height:240px;object-fit:cover;">`:''}
+    <div style="padding:22px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px;background:var(--g50);border-radius:2px;">
+        <img src="${s.selfieURL||''}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+        <div><div style="font-weight:700;font-size:13px;">📝 ${s.reporterName}</div><div style="font-size:11px;color:var(--g500);">Community Reporter</div></div>
+      </div>
+      <div style="font-family:var(--fu);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:7px;">${s.category}</div>
+      <h2 style="font-family:var(--fd);font-size:clamp(18px,3vw,24px);font-weight:700;line-height:1.25;margin-bottom:10px;">${s.title}</h2>
+      <div style="font-family:var(--fu);font-size:11px;color:var(--g500);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--g100);">📅 ${s.date}${s.time?' at '+s.time:''} · 📍 ${s.location}</div>
+      <div style="font-size:14px;line-height:1.75;color:var(--g700);">${(s.body||'').replace(/
+/g,'<br>')}</div>
+      <button onclick="closeArt()" style="margin-top:16px;background:var(--g100);border:none;padding:7px 13px;font-family:var(--fu);font-size:11px;cursor:pointer;border-radius:2px;">✕ Close</button>
+    </div>`;
+  document.getElementById('artModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+// ── UI HELPERS ───────────────────────────────────────────────────
+window.filterCat = (cat, el) => {
+  if (el) { document.querySelectorAll('.navlinks a').forEach(a=>a.style.color=''); el.style.color='#fff'; }
+  const filtered = cat ? articles.filter(a=>a.category===cat&&a.status==='published') : articles.filter(a=>a.status==='published');
+  const grid = document.getElementById('latestGrid');
+  if (!filtered.length) { grid.innerHTML=`<div class="empty-state" style="grid-column:span 3"><div class="ei">📰</div>No ${cat} articles yet.</div>`; return; }
+  grid.innerHTML = filtered.slice(0,6).map(a=>`<article class="ncard" onclick="openArt('${a.id}')">
+    <div class="ncard-img">${a.image?`<img src="${a.image}" loading="lazy">`:'<div style="height:100%;background:var(--g100);"></div>'}<span class="ncat">${a.category}</span></div>
+    <h3 class="ncard-title">${a.title}</h3><p class="ncard-exc">${a.excerpt||''}</p>
+    <div class="ncard-meta"><span>${timeAgo(a.date)}</span></div>
+  </article>`).join('');
+  window.scrollTo({top:500,behavior:'smooth'});
+};
+
+window.doSearch = (q) => {
+  if(!q)return;
+  const ql  = q.toLowerCase();
+  const res = articles.filter(a=>a.status==='published'&&(a.title.toLowerCase().includes(ql)||(a.excerpt||'').toLowerCase().includes(ql)));
+  const el  = document.getElementById('latestGrid');
+  if(!res.length){el.innerHTML=`<div class="empty-state" style="grid-column:span 3"><div class="ei">🔍</div>No results for "${q}".</div>`;return;}
+  el.innerHTML = res.slice(0,6).map(a=>`<article class="ncard" onclick="openArt('${a.id}')">
+    <div class="ncard-img">${a.image?`<img src="${a.image}" loading="lazy">`:'<div style="height:100%;background:var(--g100);"></div>'}<span class="ncat">${a.category}</span></div>
+    <h3 class="ncard-title">${a.title}</h3><p class="ncard-exc">${a.excerpt||''}</p>
+    <div class="ncard-meta"><span>${timeAgo(a.date)}</span></div>
+  </article>`).join('');
+  window.scrollTo({top:500,behavior:'smooth'});
+};
+
+window.toggleDark = () => { const d=document.body.getAttribute('data-dark')==='true'; document.body.setAttribute('data-dark',!d); document.querySelector('.darktog').textContent=d?'🌙':'☀️'; };
+window.setLang   = (btn) => { document.querySelectorAll('.lbtn').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); };
+
+document.getElementById('hambBtn')?.addEventListener('click', () => {
+  document.getElementById('mobNav').classList.add('open');
+  document.getElementById('mobOv').classList.add('open');
+  document.body.style.overflow='hidden';
 });
-function closeMobileNav() {
-  document.getElementById('mobileNav').classList.remove('open');
-  document.getElementById('mobileOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
+window.closeMob = () => { document.getElementById('mobNav').classList.remove('open'); document.getElementById('mobOv').classList.remove('open'); document.body.style.overflow=''; };
+
+window.openModal  = (id) => { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; };
+window.closeModal = (id) => { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; };
+
+// Date
+document.getElementById('todayDate').textContent = '📅 '+new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Notification
+setTimeout(() => document.getElementById('notif').classList.add('show'), 5000);
 
 // Scroll fade-in
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
-  });
-}, {threshold:0.1});
-
-// Init
-renderAll();
-loadWeather();
-setTimeout(() => { document.getElementById('notifBar').classList.add('show'); }, 4000);
-
-// Live reload — check for updates every 30 seconds
-setInterval(renderAll, 30000);
-
-// Fade-in on scroll
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';} });
+}, {threshold:.1});
 setTimeout(() => {
-  document.querySelectorAll('.news-card, .list-news-item, .opinion-card, .event-item, .trending-item').forEach(el => {
-    el.style.opacity = '0'; el.style.transform = 'translateY(16px)';
-    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    observer.observe(el);
+  document.querySelectorAll('.ncard,.lnews-item,.op-card,.ev-item,.trend-item').forEach(el => {
+    el.style.opacity='0'; el.style.transform='translateY(14px)'; el.style.transition='opacity .5s ease,transform .5s ease';
+    obs.observe(el);
   });
-}, 100);
+}, 500);
+
 </script>
-
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import{getFirestore,collection,query,where,orderBy,getDocs,limit}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
-try{
-  const app=initializeApp(cfg);
-  const db=getFirestore(app);
-  getDocs(query(collection(db,"submissions"),where("status","==","approved"),orderBy("submittedAt","desc"),limit(8))).then(snap=>{
-    const el=document.getElementById("peopleNewsGrid");
-    if(!el)return;
-    if(snap.empty){el.innerHTML="<p style=\"color:rgba(255,255,255,.4);font-size:13px;grid-column:1/-1;\">No community stories yet. <a href=\"people/index.html\" style=\"color:var(--red)\">Be the first!</a></p>";return;}
-    el.innerHTML=snap.docs.map(d=>{
-      const s=d.data();
-      const img=s.media&&s.media.find(m=>m.type==="image");
-      return \`<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);overflow:hidden;cursor:pointer;" onclick="window._pnArt=\${JSON.stringify(JSON.stringify(s))};document.getElementById(\'pnModal\').style.display=\'flex\'">
-        <div style="height:120px;overflow:hidden;background:rgba(255,255,255,.05);">\${img?'<img src="'+img.url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">':'<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.2);">📷</div>'}</div>
-        <div style="padding:11px;">
-          <div style="font-family:var(--fu);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:4px;">\${s.category}</div>
-          <div style="font-family:var(--fd);font-size:13px;font-weight:700;line-height:1.3;color:#fff;margin-bottom:5px;">\${s.title}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.35);">📍 \${s.location}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);">
-            <img src="\${s.selfieURL||''}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\'">
-            <span style="font-family:var(--fu);font-size:10px;font-weight:600;color:rgba(255,255,255,.65);">📝 \${s.reporterName}</span>
-          </div>
-        </div>
-      </div>\`;
-    }).join("");
-  }).catch(e=>console.log("PN:",e));
-}catch(e){console.log("FB:",e);}
-</script>
-
-<!-- People's News Article Modal -->
-<div id="pnModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:#fff;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative;" id="pnModalBox">
-    <button onclick="document.getElementById('pnModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;z-index:1;">×</button>
-  </div>
-</div>
-<script>
-document.getElementById('pnModal').addEventListener('click',function(e){
-  if(e.target!==this)return;
-  this.style.display='none';
-});
-// Populate modal when opened
-const pnObs=new MutationObserver(()=>{
-  const m=document.getElementById('pnModal');
-  if(m.style.display==='flex'&&window._pnArt){
-    const s=JSON.parse(window._pnArt);
-    const img=s.media&&s.media.find(m=>m.type==='image');
-    document.getElementById('pnModalBox').innerHTML=\`
-      <button onclick="document.getElementById('pnModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;z-index:1;">×</button>
-      \${img?'<img src="'+img.url+'" style="width:100%;height:240px;object-fit:cover;">':''}
-      <div style="padding:22px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px;background:#f8f8f8;border-radius:2px;">
-          <img src="\${s.selfieURL||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
-          <div><div style="font-weight:700;font-size:13px;">📝 \${s.reporterName}</div><div style="font-size:11px;color:#777;">Community Reporter · People's Portal</div></div>
-        </div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#BB1919;margin-bottom:7px;">\${s.category}</div>
-        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:10px;line-height:1.25;">\${s.title}</h2>
-        <div style="font-size:12px;color:#777;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #eee;">📅 \${s.date}\${s.time?' at '+s.time:''} · 📍 \${s.location}</div>
-        <div style="font-size:14px;line-height:1.75;color:#444;">\${(s.body||'').replace(/\n/g,'<br>')}</div>
-      </div>\`;
-    window._pnArt=null;
-  }
-});
-pnObs.observe(document.getElementById('pnModal'),{attributes:true,attributeFilter:['style']});
-</script>
-
-
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,doc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
-
-try{
-  const app = initializeApp(cfg, 'mainsite');
-  const db  = getFirestore(app);
-
-  // Listen for real-time updates from Firestore
-  onSnapshot(doc(db,'sitedata','main'), (snap) => {
-    if(!snap.exists()) return;
-    const fsData = snap.data();
-    
-    // Get local data (has images)
-    const localData = JSON.parse(localStorage.getItem('ub_admin_data')||'{}');
-    
-    // Merge: Firestore has latest metadata, localStorage has images
-    const merged = {...localData};
-    if(fsData.ticker)      merged.ticker      = fsData.ticker;
-    if(fsData.liveFeed)    merged.liveFeed    = fsData.liveFeed;
-    if(fsData.events)      merged.events      = fsData.events;
-    if(fsData.classifieds) merged.classifieds = fsData.classifieds;
-    if(fsData.site)        merged.site        = fsData.site;
-    if(fsData.weather)     merged.weather     = fsData.weather;
-    
-    // Merge articles: Firestore metadata + local images
-    if(fsData.articles && fsData.articles.length > 0) {
-      const localArts = localData.articles || [];
-      merged.articles = fsData.articles.map(fa => {
-        const localArt = localArts.find(la => la.id === fa.id);
-        if(localArt && localArt.image) return {...fa, image: localArt.image};
-        return fa;
-      });
-    }
-    
-    // Save merged to localStorage so getData() picks it up
-    localStorage.setItem('ub_admin_data', JSON.stringify(merged));
-    
-    // Re-render everything
-    if(typeof renderAll === 'function') renderAll();
-    if(typeof loadWeather === 'function') loadWeather();
-  });
-} catch(e){ console.log('Firestore main:', e); }
-</script>
-
 </body>
 </html>
