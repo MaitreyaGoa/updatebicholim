@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Bicholim — News Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #BB1919;
+  --red-dark: #8B0000;
+  --black: #0A0A0A;
+  --gray-900: #1a1a1a;
+  --gray-700: #444;
+  --gray-500: #777;
+  --gray-300: #ccc;
+  --gray-100: #f0f0f0;
+  --gray-50: #f8f8f8;
+  --white: #fff;
+  --green: #1a7a3a;
+  --green-light: #d4edda;
+  --font: 'IBM Plex Sans', sans-serif;
+  --sidebar: 240px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--gray-50); color: var(--black); display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar);
+  background: var(--black);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo .name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 900;
+  color: white;
+  line-height: 1.1;
+}
+.sidebar-logo .name span { color: var(--red); }
+.sidebar-logo .sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+.nav-item.active { background: rgba(187,25,25,0.18); color: white; border-left-color: var(--red); }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-section-label {
+  padding: 14px 20px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+}
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+}
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.user-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+}
+.user-name { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; }
+.logout-btn {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+  padding: 6px;
+  font-family: var(--font);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+/* MAIN */
+.main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.topbar {
+  background: white;
+  border-bottom: 1px solid var(--gray-100);
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.topbar-title { font-size: 16px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.view-site-btn {
+  background: var(--red);
+  color: white;
+  padding: 7px 14px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.view-site-btn:hover { background: #9a1414; }
+.page { padding: 28px; display: none; }
+.page.active { display: block; }
+
+/* STATS CARDS */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.stat-card {
+  background: white;
+  border: 1px solid var(--gray-100);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--red);
+}
+.stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 8px; }
+.stat-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--black); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+
+/* CARDS */
+.card {
+  background: white;
+  border: 1px solid var(--gray-100);
+  margin-bottom: 20px;
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title { font-size: 14px; font-weight: 700; }
+.card-body { padding: 20px; }
+
+/* FORM ELEMENTS */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-700);
+  margin-bottom: 5px;
+}
+.field label .req { color: var(--red); }
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  border: 1px solid var(--gray-300);
+  padding: 9px 12px;
+  font-family: var(--font);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: white;
+  border-radius: 2px;
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus { border-color: var(--red); }
+.field textarea { resize: vertical; min-height: 100px; }
+
+/* IMAGE UPLOAD */
+.img-upload-area {
+  border: 2px dashed var(--gray-300);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--gray-50);
+  border-radius: 2px;
+  position: relative;
+}
+.img-upload-area:hover, .img-upload-area.drag { border-color: var(--red); background: #fff5f5; }
+.img-upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.upload-icon { font-size: 36px; margin-bottom: 8px; }
+.upload-text { font-size: 14px; color: var(--gray-700); }
+.upload-sub { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+.img-preview {
+  display: none;
+  position: relative;
+  margin-top: 12px;
+}
+.img-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.img-preview-remove {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* BUTTONS */
+.btn {
+  padding: 10px 20px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: 2px;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--red); color: white; }
+.btn-primary:hover { background: #9a1414; }
+.btn-secondary { background: var(--gray-100); color: var(--gray-700); }
+.btn-secondary:hover { background: var(--gray-300); }
+.btn-success { background: var(--green); color: white; }
+.btn-success:hover { background: #145e2c; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-danger:hover { background: #b02a37; }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* NEWS TABLE */
+.news-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.news-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-100);
+}
+.news-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: middle;
+}
+.news-table tr:hover td { background: var(--gray-50); }
+.news-table .thumb {
+  width: 60px; height: 42px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.news-table .headline {
+  font-weight: 600;
+  color: var(--black);
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge-published { background: #d4edda; color: #155724; }
+.badge-draft { background: #fff3cd; color: #856404; }
+.badge-breaking { background: #f8d7da; color: #721c24; }
+
+/* TICKER EDITOR */
+.ticker-list { list-style: none; }
+.ticker-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+.ticker-list li:hover { background: var(--gray-50); }
+.ticker-drag { cursor: grab; color: var(--gray-300); font-size: 16px; }
+.ticker-text { flex: 1; }
+.ticker-remove { background: none; border: none; color: var(--gray-400, #aaa); cursor: pointer; font-size: 16px; padding: 2px 6px; }
+.ticker-remove:hover { color: #dc3545; }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--green);
+  color: white;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  transform: translateX(120%);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 2px;
+  min-width: 280px;
+}
+.toast.show { transform: translateX(0); }
+.toast.error { background: #dc3545; }
+
+/* WEATHER PREVIEW */
+.weather-preview {
+  background: var(--black);
+  color: white;
+  padding: 20px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.weather-preview .temp { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 300; }
+.weather-preview .details { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.8; }
+
+/* GALLERY GRID */
+.gallery-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.gallery-admin-item {
+  position: relative;
+  height: 100px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--gray-100);
+}
+.gallery-admin-item img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-admin-item .remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.gallery-admin-item .caption-input {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.6);
+  border: none;
+  color: white;
+  font-size: 10px;
+  padding: 4px 6px;
+  font-family: var(--font);
+  width: 100%;
+  outline: none;
+}
+
+/* EVENTS FORM */
+.events-list { list-style: none; }
+.events-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+.event-date-pill {
+  background: var(--red);
+  color: white;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* SETTINGS */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* LIVE FEED */
+.live-admin-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gray-100);
+  align-items: flex-start;
+}
+.live-admin-time { font-size: 11px; font-weight: 700; color: var(--red); width: 50px; flex-shrink: 0; padding-top: 2px; }
+.live-admin-text { flex: 1; font-size: 13px; color: var(--gray-700); }
+.live-admin-remove { background: none; border: none; color: var(--gray-300); cursor: pointer; font-size: 16px; }
+.live-admin-remove:hover { color: #dc3545; }
+
+/* LOGIN */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+}
+.login-box {
+  background: white;
+  width: 380px;
+  padding: 40px;
+}
+.login-logo { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; margin-bottom: 6px; }
+.login-logo span { color: var(--red); }
+.login-sub { font-size: 12px; color: var(--gray-500); margin-bottom: 28px; letter-spacing: 0.06em; text-transform: uppercase; }
+.login-error { background: #f8d7da; color: #721c24; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; border-radius: 2px; display: none; }
+
+@media (max-width: 900px) {
+  :root { --sidebar: 0px; }
+  .sidebar { display: none; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .gallery-admin-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">UPDATE <span>BICHOLIM</span></div>
+    <div class="login-sub">News Admin Portal</div>
+    <div class="login-error" id="loginError">❌ Wrong username or password.</div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="admin" onkeypress="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px;" onclick="doLogin()">Login to Admin Portal</button>
+    <p style="font-size:11px;color:var(--gray-400,#bbb);margin-top:14px;text-align:center;">Default: admin / bicholim2025</p>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="name">UPDATE <span>BICHOLIM</span></div>
+    <div class="sub">Admin Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Content</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('add-news',this)"><span class="icon">✏️</span> Add News Article</div>
+    <div class="nav-item" onclick="showPage('manage-news',this)"><span class="icon">📰</span> Manage Articles</div>
+    <div class="nav-item" onclick="showPage('ticker',this)"><span class="icon">📡</span> Breaking Ticker</div>
+    <div class="nav-item" onclick="showPage('live-feed',this)"><span class="icon">⚡</span> Live Feed</div>
+    <div class="nav-section-label">Media</div>
+    <div class="nav-item" onclick="showPage('gallery',this)"><span class="icon">🖼️</span> Photo Gallery</div>
+    <div class="nav-section-label">Extras</div>
+    <div class="nav-item" onclick="showPage('events',this)"><span class="icon">📅</span> Events Calendar</div>
+    <div class="nav-item" onclick="showPage('classifieds',this)"><span class="icon">📋</span> Classifieds</div>
+    <div class="nav-item" onclick="showPage('weather',this)"><span class="icon">⛅</span> Weather</div>
+    <div class="nav-section-label">System</div>
+    <div class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span> Settings</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-avatar" id="avatarInitial">A</div>
+      <div class="user-name" id="userNameDisplay">Admin</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">📊 Dashboard</div>
+    <div class="topbar-right">
+      <a href="../index.html" target="_blank" class="view-site-btn">🌐 View Live Site</a>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Articles</div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Published Today</div>
+        <div class="stat-value" id="stat-today">0</div>
+        <div class="stat-sub">Live on site</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Breaking News</div>
+        <div class="stat-value" id="stat-breaking">0</div>
+        <div class="stat-sub">In ticker</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Gallery Photos</div>
+        <div class="stat-value" id="stat-gallery">0</div>
+        <div class="stat-sub">Published</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🕒 Recently Added Articles</div>
+        <button class="btn btn-primary btn-sm" onclick="showPage('add-news',null)">+ Add New Article</button>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <table class="news-table">
+          <thead><tr><th>Image</th><th>Headline</th><th>Category</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="dashRecentTable"><tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-500);">No articles yet. Add your first article!</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">📡 Quick Add to Breaking Ticker</div></div>
+      <div class="card-body">
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="quickTicker" placeholder="Type breaking news headline here…" style="flex:1;border:1px solid var(--gray-300);padding:9px 12px;font-family:var(--font);font-size:14px;outline:none;border-radius:2px;" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--gray-300)'">
+          <button class="btn btn-primary" onclick="quickAddTicker()">Add to Ticker</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD NEWS -->
+  <div class="page" id="page-add-news">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">✏️ Add New Article</div>
+        <button class="btn btn-secondary btn-sm" onclick="clearForm()">🗑 Clear Form</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row three">
+          <div class="field">
+            <label>Category <span class="req">*</span></label>
+            <select id="art-category">
+              <option value="">-- Select Category --</option>
+              <option>Politics</option><option>Crime</option><option>Development</option>
+              <option>Business</option><option>Sports</option><option>Education</option>
+              <option>Entertainment</option><option>Opinion</option><option>Health</option>
+              <option>Environment</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Language <span class="req">*</span></label>
+            <select id="art-lang">
+              <option value="en">English</option>
+              <option value="ko">Konkani</option>
+              <option value="mr">Marathi</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select id="art-status">
+              <option value="published">Published (Live)</option>
+              <option value="draft">Draft (Hidden)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Headline / Title <span class="req">*</span></label>
+          <input type="text" id="art-title" placeholder="Enter the main news headline…">
+        </div>
+
+        <div class="field">
+          <label>Short Summary (shown on cards) <span class="req">*</span></label>
+          <textarea id="art-excerpt" rows="2" placeholder="1–2 sentence summary of the article…"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Full Article Body</label>
+          <textarea id="art-body" rows="8" placeholder="Write the full article here. You can use basic formatting.&#10;&#10;New paragraphs: press Enter twice."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Reporter / Author Name</label>
+            <input type="text" id="art-author" placeholder="e.g. Ramesh Naik">
+          </div>
+          <div class="field">
+            <label>Location (optional)</label>
+            <input type="text" id="art-location" placeholder="e.g. Bicholim Town, Mayem">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Featured Image</label>
+          <div class="img-upload-area" id="uploadArea">
+            <input type="file" accept="image/*" id="imgInput" onchange="handleImgUpload(this)">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text">Click or drag & drop image here</div>
+            <div class="upload-sub">Supports JPG, PNG, WebP — max 5MB. Images are stored as base64.</div>
+          </div>
+          <div class="img-preview" id="imgPreview">
+            <img id="imgPreviewSrc" src="" alt="Preview">
+            <button class="img-preview-remove" onclick="removeImg()">×</button>
+          </div>
+          <p style="font-size:11px;color:var(--gray-500);margin-top:6px;">💡 For best results use landscape images (1200×675px or 16:9 ratio)</p>
+        </div>
+
+        <div class="field">
+          <label>
+            <input type="checkbox" id="art-breaking" style="width:auto;margin-right:6px;">
+            🔴 Mark as Breaking News (adds to ticker automatically)
+          </label>
+        </div>
+
+        <div class="field">
+          <label>
+            <input type="checkbox" id="art-hero" style="width:auto;margin-right:6px;">
+            ⭐ Feature as Hero Story (shows in top banner)
+          </label>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="publishArticle()">🚀 Publish Article</button>
+          <button class="btn btn-secondary" onclick="saveAsDraft()">💾 Save as Draft</button>
+          <span id="saveStatus" style="font-size:12px;color:var(--gray-500);"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANAGE NEWS -->
+  <div class="page" id="page-manage-news">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📰 All Articles</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <select id="filterCat" onchange="renderManageTable()" style="border:1px solid var(--gray-300);padding:6px 10px;font-family:var(--font);font-size:12px;border-radius:2px;outline:none;">
+            <option value="">All Categories</option>
+            <option>Politics</option><option>Crime</option><option>Development</option>
+            <option>Business</option><option>Sports</option><option>Education</option>
+            <option>Entertainment</option><option>Opinion</option><option>Health</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="showPage('add-news',null)">+ New Article</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;overflow-x:auto;">
+        <table class="news-table">
+          <thead><tr><th>Image</th><th>Headline</th><th>Category</th><th>Lang</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="manageTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="page" id="page-ticker">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📡 Breaking News Ticker</div>
+        <span style="font-size:12px;color:var(--gray-500);">These scroll across the top of the website</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <input type="text" id="tickerInput" placeholder="Type ticker headline (keep it short — under 100 chars)…" style="flex:1;border:1px solid var(--gray-300);padding:9px 12px;font-family:var(--font);font-size:14px;outline:none;border-radius:2px;" onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--gray-300)'" onkeypress="if(event.key==='Enter')addTickerItem()">
+          <button class="btn btn-primary" onclick="addTickerItem()">+ Add Headline</button>
+        </div>
+        <ul class="ticker-list" id="tickerList"></ul>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-success" onclick="saveTicker()">💾 Save Ticker</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE FEED -->
+  <div class="page" id="page-live-feed">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">⚡ Bicholim Live Feed</div>
+        <span style="font-size:12px;color:var(--gray-500);">Short real-time updates (traffic, alerts, results etc)</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;margin-bottom:10px;align-items:end;">
+          <div class="field" style="margin:0">
+            <label>Update Text</label>
+            <input type="text" id="liveInput" placeholder="e.g. Road blocked near Bicholim bridge…" onkeypress="if(event.key==='Enter')addLiveItem()">
+          </div>
+          <button class="btn btn-primary" onclick="addLiveItem()">+ Post Update</button>
+        </div>
+        <div id="liveFeedList"></div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-success" onclick="saveLiveFeed()">💾 Save Feed</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div class="page" id="page-gallery">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🖼️ Photo Gallery</div>
+      </div>
+      <div class="card-body">
+        <div class="img-upload-area" style="margin-bottom:16px;">
+          <input type="file" accept="image/*" multiple id="galleryInput" onchange="handleGalleryUpload(this)">
+          <div class="upload-icon">🗂️</div>
+          <div class="upload-text">Click to upload gallery photos (select multiple)</div>
+          <div class="upload-sub">JPG, PNG — max 5MB each</div>
+        </div>
+        <div class="gallery-admin-grid" id="galleryGrid"></div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-success" onclick="saveGallery()">💾 Save Gallery</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENTS -->
+  <div class="page" id="page-events">
+    <div class="card">
+      <div class="card-header"><div class="card-title">📅 Events Calendar</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:150px 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:16px;">
+          <div class="field" style="margin:0">
+            <label>Date</label>
+            <input type="date" id="evDate">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Event Name</label>
+            <input type="text" id="evName" placeholder="e.g. Sao João Festival">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Location</label>
+            <input type="text" id="evPlace" placeholder="e.g. Mayem Lake">
+          </div>
+          <button class="btn btn-primary" onclick="addEvent()" style="margin-bottom:0;">+ Add</button>
+        </div>
+        <ul class="events-list" id="eventsList"></ul>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-success" onclick="saveEvents()">💾 Save Events</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASSIFIEDS -->
+  <div class="page" id="page-classifieds">
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 Classifieds & Notices</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:end;margin-bottom:16px;">
+          <div class="field" style="margin:0">
+            <label>Type</label>
+            <select id="clType">
+              <option value="notice">Govt Notice</option>
+              <option value="tender">Tender</option>
+              <option value="lost">Lost & Found</option>
+              <option value="event">Event</option>
+              <option value="job">Job</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0">
+            <label>Text</label>
+            <input type="text" id="clText" placeholder="Classified text here…" onkeypress="if(event.key==='Enter')addClassified()">
+          </div>
+          <button class="btn btn-primary" onclick="addClassified()" style="margin-bottom:0;">+ Add</button>
+        </div>
+        <div id="classifiedsList"></div>
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-success" onclick="saveClassifieds()">💾 Save Classifieds</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="page" id="page-weather">
+    <div class="card">
+      <div class="card-header"><div class="card-title">⛅ Weather Configuration</div></div>
+      <div class="card-body">
+        <div style="background:#fff3cd;border:1px solid #ffc107;padding:14px;margin-bottom:20px;border-radius:2px;">
+          <strong>📋 How to get a FREE weather API key:</strong><br>
+          <ol style="margin:8px 0 0 16px;font-size:13px;line-height:1.8;">
+            <li>Go to <a href="https://openweathermap.org/api" target="_blank" style="color:var(--red)">openweathermap.org/api</a></li>
+            <li>Click "Sign Up" (it's free)</li>
+            <li>After login, go to "My API Keys"</li>
+            <li>Copy your API key and paste it below</li>
+            <li>The free tier allows 1000 calls/day — more than enough</li>
+          </ol>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>OpenWeatherMap API Key</label>
+            <input type="text" id="weatherKey" placeholder="Paste your API key here…">
+          </div>
+          <div class="field">
+            <label>City Name</label>
+            <input type="text" id="weatherCity" value="Bicholim,IN" placeholder="Bicholim,IN">
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="testWeather()">🔍 Test Weather API</button>
+          <button class="btn btn-success" onclick="saveWeather()">💾 Save Settings</button>
+        </div>
+        <div id="weatherPreview" style="margin-top:20px;display:none;">
+          <div class="weather-preview">
+            <div class="temp" id="wp-temp">--°C</div>
+            <div class="details">
+              <div><strong id="wp-desc">--</strong></div>
+              <div>💧 Humidity: <span id="wp-hum">--</span>%</div>
+              <div>💨 Wind: <span id="wp-wind">--</span> km/h</div>
+              <div>📍 <span id="wp-city">--</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="settings-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔐 Change Password</div></div>
+        <div class="card-body">
+          <div class="field"><label>Current Password</label><input type="password" id="currPass" placeholder="••••••••"></div>
+          <div class="field"><label>New Password</label><input type="password" id="newPass" placeholder="••••••••"></div>
+          <div class="field"><label>Confirm New Password</label><input type="password" id="confPass" placeholder="••••••••"></div>
+          <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">👤 Staff Users</div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Add team members who can post news.</p>
+          <div class="field"><label>Username</label><input type="text" id="newUser" placeholder="reporter1"></div>
+          <div class="field"><label>Password</label><input type="password" id="newUserPass" placeholder="••••••••"></div>
+          <button class="btn btn-primary" onclick="addUser()">+ Add User</button>
+          <div id="usersList" style="margin-top:16px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🌐 Site Info</div></div>
+        <div class="card-body">
+          <div class="field"><label>Site Name</label><input type="text" id="siteName" value="Update Bicholim"></div>
+          <div class="field"><label>Tagline</label><input type="text" id="siteTagline" value="Goa's Trusted Local News"></div>
+          <div class="field"><label>WhatsApp Channel Link</label><input type="text" id="waLink" placeholder="https://wa.me/..."></div>
+          <div class="field"><label>Contact Email</label><input type="text" id="contactEmail" placeholder="news@updatebicholim.com"></div>
+          <button class="btn btn-success" onclick="saveSiteInfo()">💾 Save Info</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📤 Export / Backup</div></div>
+        <div class="card-body">
+          <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px;">Download all your content as a JSON backup file.</p>
+          <button class="btn btn-secondary" onclick="exportData()">⬇️ Download Backup</button>
+          <div style="margin-top:14px;">
+            <div class="field"><label>Restore from Backup</label><input type="file" accept=".json" onchange="importData(this)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'ub_admin_data';
+const USERS_KEY   = 'ub_users';
+
+let state = {
+  articles:    [],
+  ticker:      [],
+  liveFeed:    [],
+  gallery:     [],
+  events:      [],
+  classifieds: [],
+  weather:     { key: '', city: 'Bicholim,IN' },
+  site:        { name: 'Update Bicholim', tagline: "Goa's Trusted Local News", wa: '', email: '' }
+};
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+let users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+if (!users.length) {
+  users = [{ username: 'admin', password: 'bicholim2025', role: 'admin' }];
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const found = users.find(x => x.username === u && x.password === p);
+  if (found) {
+    sessionStorage.setItem('ub_logged', JSON.stringify(found));
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('userNameDisplay').textContent = found.username;
+    document.getElementById('avatarInitial').textContent = found.username[0].toUpperCase();
+    loadState();
+    refreshDashboard();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('ub_logged');
+  location.reload();
+}
+
+// Check if already logged in
+if (sessionStorage.getItem('ub_logged')) {
+  const u = JSON.parse(sessionStorage.getItem('ub_logged'));
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('userNameDisplay').textContent = u.username;
+  document.getElementById('avatarInitial').textContent = u.username[0].toUpperCase();
+}
+
+// ─── PERSISTENCE ──────────────────────────────────────────────────────────────
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { state = { ...state, ...JSON.parse(raw) }; } catch(e) {}
+  }
+  renderAll();
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // Also write to sessionStorage so main site can read it
+  sessionStorage.setItem('ub_news_data', JSON.stringify(state));
+}
+
+function renderAll() {
+  renderManageTable();
+  renderTickerList();
+  renderLiveFeedList();
+  renderGalleryGrid();
+  renderEventsList();
+  renderClassifiedsList();
+  refreshDashboard();
+  loadSettingsForm();
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+const pageTitles = {
+  'dashboard': '📊 Dashboard', 'add-news': '✏️ Add News Article',
+  'manage-news': '📰 Manage Articles', 'ticker': '📡 Breaking Ticker',
+  'live-feed': '⚡ Live Feed', 'gallery': '🖼️ Photo Gallery',
+  'events': '📅 Events Calendar', 'classifieds': '📋 Classifieds',
+  'weather': '⛅ Weather', 'settings': '⚙️ Settings'
+};
+
+function showPage(name, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  else document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+name+"'")) n.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent = pageTitles[name] || name;
+  if (name === 'manage-news') renderManageTable();
+  if (name === 'dashboard') refreshDashboard();
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function refreshDashboard() {
+  const today = new Date().toDateString();
+  document.getElementById('stat-total').textContent = state.articles.length;
+  document.getElementById('stat-today').textContent = state.articles.filter(a => new Date(a.date).toDateString() === today).length;
+  document.getElementById('stat-breaking').textContent = state.ticker.length;
+  document.getElementById('stat-gallery').textContent = state.gallery.length;
+
+  const tbody = document.getElementById('dashRecentTable');
+  const recent = [...state.articles].sort((a,b) => b.date - a.date).slice(0,5);
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-500);">No articles yet. Add your first article!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = recent.map(a => `
+    <tr>
+      <td>${a.image ? `<img class="thumb" src="${a.image}" alt="">` : '📷'}</td>
+      <td><div class="headline">${a.title}</div></td>
+      <td><span class="status-badge" style="background:#e8f4f8;color:#0c5460">${a.category}</span></td>
+      <td><span class="status-badge ${a.breaking ? 'badge-breaking' : (a.status==='draft' ? 'badge-draft' : 'badge-published')}">${a.breaking ? '🔴 Breaking' : a.status}</span></td>
+      <td>${new Date(a.date).toLocaleDateString('en-IN')}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}')">Delete</button></td>
+    </tr>
+  `).join('');
+}
+
+// ─── ARTICLES ─────────────────────────────────────────────────────────────────
+let currentImg = '';
+
+function handleImgUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large! Max 5MB.', true); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentImg = e.target.result;
+    document.getElementById('imgPreviewSrc').src = currentImg;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('uploadArea').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImg() {
+  currentImg = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('imgInput').value = '';
+}
+
+function gatherArticleData(status) {
+  const title    = document.getElementById('art-title').value.trim();
+  const category = document.getElementById('art-category').value;
+  const excerpt  = document.getElementById('art-excerpt').value.trim();
+  if (!title) { showToast('Please enter a headline!', true); return null; }
+  if (!category) { showToast('Please select a category!', true); return null; }
+  return {
+    id:       Date.now().toString(),
+    title, category, excerpt,
+    body:     document.getElementById('art-body').value.trim(),
+    author:   document.getElementById('art-author').value.trim() || 'Staff Reporter',
+    location: document.getElementById('art-location').value.trim(),
+    lang:     document.getElementById('art-lang').value,
+    status,
+    breaking: document.getElementById('art-breaking').checked,
+    hero:     document.getElementById('art-hero').checked,
+    image:    currentImg,
+    date:     Date.now()
+  };
+}
+
+function publishArticle() {
+  const art = gatherArticleData('published');
+  if (!art) return;
+  state.articles.unshift(art);
+  if (art.breaking) state.ticker.unshift(art.title);
+  saveState();
+  clearForm();
+  showToast('✅ Article published successfully!');
+  refreshDashboard();
+}
+
+function saveAsDraft() {
+  const art = gatherArticleData('draft');
+  if (!art) return;
+  state.articles.unshift(art);
+  saveState();
+  clearForm();
+  showToast('💾 Saved as draft.');
+}
+
+function clearForm() {
+  ['art-title','art-excerpt','art-body','art-author','art-location'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('art-category').selectedIndex = 0;
+  document.getElementById('art-status').selectedIndex = 0;
+  document.getElementById('art-breaking').checked = false;
+  document.getElementById('art-hero').checked = false;
+  removeImg();
+  document.getElementById('saveStatus').textContent = '';
+}
+
+function renderManageTable() {
+  const cat  = document.getElementById('filterCat')?.value || '';
+  const list = cat ? state.articles.filter(a => a.category === cat) : state.articles;
+  const tbody = document.getElementById('manageTable');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray-500);">No articles found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(a => `
+    <tr>
+      <td>${a.image ? `<img class="thumb" src="${a.image}" alt="">` : '📷'}</td>
+      <td><div class="headline" title="${a.title}">${a.title}</div></td>
+      <td><span class="status-badge" style="background:#e8f4f8;color:#0c5460">${a.category}</span></td>
+      <td>${a.lang?.toUpperCase() || 'EN'}</td>
+      <td><span class="status-badge ${a.breaking ? 'badge-breaking' : (a.status==='draft' ? 'badge-draft' : 'badge-published')}">${a.breaking ? '🔴 Breaking' : a.status}</span></td>
+      <td>${new Date(a.date).toLocaleDateString('en-IN')}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm" style="background:#e8f4f8;color:#0c5460;" onclick="toggleStatus('${a.id}')">${a.status==='draft'?'Publish':'Unpublish'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function deleteArticle(id) {
+  if (!confirm('Delete this article?')) return;
+  state.articles = state.articles.filter(a => a.id !== id);
+  saveState();
+  renderManageTable();
+  refreshDashboard();
+  showToast('🗑 Article deleted.');
+}
+
+function toggleStatus(id) {
+  const a = state.articles.find(x => x.id === id);
+  if (a) a.status = a.status === 'draft' ? 'published' : 'draft';
+  saveState();
+  renderManageTable();
+  showToast('✅ Status updated.');
+}
+
+// ─── TICKER ───────────────────────────────────────────────────────────────────
+function renderTickerList() {
+  const ul = document.getElementById('tickerList');
+  if (!state.ticker.length) { ul.innerHTML = '<li style="padding:16px;color:var(--gray-500);font-size:13px;">No ticker items yet.</li>'; return; }
+  ul.innerHTML = state.ticker.map((t,i) => `
+    <li>
+      <span class="ticker-drag">⠿</span>
+      <span class="ticker-text">${t}</span>
+      <button class="ticker-remove" onclick="removeTicker(${i})">×</button>
+    </li>
+  `).join('');
+}
+
+function addTickerItem() {
+  const val = document.getElementById('tickerInput').value.trim();
+  if (!val) return;
+  state.ticker.unshift(val);
+  document.getElementById('tickerInput').value = '';
+  renderTickerList();
+}
+
+function quickAddTicker() {
+  const val = document.getElementById('quickTicker').value.trim();
+  if (!val) return;
+  state.ticker.unshift(val);
+  document.getElementById('quickTicker').value = '';
+  saveState();
+  refreshDashboard();
+  showToast('📡 Added to breaking ticker!');
+}
+
+function removeTicker(i) { state.ticker.splice(i,1); renderTickerList(); }
+
+function saveTicker() { saveState(); showToast('📡 Ticker saved!'); }
+
+// ─── LIVE FEED ────────────────────────────────────────────────────────────────
+function renderLiveFeedList() {
+  const el = document.getElementById('liveFeedList');
+  if (!state.liveFeed.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No live updates yet.</p>'; return; }
+  el.innerHTML = state.liveFeed.map((item,i) => `
+    <div class="live-admin-item">
+      <div class="live-admin-time">${item.time}</div>
+      <div class="live-admin-text">${item.text}</div>
+      <button class="live-admin-remove" onclick="removeLive(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addLiveItem() {
+  const text = document.getElementById('liveInput').value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  state.liveFeed.unshift({ time, text, date: Date.now() });
+  document.getElementById('liveInput').value = '';
+  renderLiveFeedList();
+}
+
+function removeLive(i) { state.liveFeed.splice(i,1); renderLiveFeedList(); }
+
+function saveLiveFeed() { saveState(); showToast('⚡ Live feed saved!'); }
+
+// ─── GALLERY ──────────────────────────────────────────────────────────────────
+function handleGalleryUpload(input) {
+  const files = Array.from(input.files);
+  let loaded = 0;
+  files.forEach(file => {
+    if (file.size > 5*1024*1024) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.gallery.push({ src: e.target.result, caption: '', id: Date.now()+Math.random() });
+      loaded++;
+      if (loaded === files.length) renderGalleryGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderGalleryGrid() {
+  const grid = document.getElementById('galleryGrid');
+  if (!state.gallery.length) { grid.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">No gallery photos yet.</p>'; return; }
+  grid.innerHTML = state.gallery.map((g,i) => `
+    <div class="gallery-admin-item">
+      <img src="${g.src}" alt="${g.caption}">
+      <button class="remove" onclick="removeGalleryItem(${i})">×</button>
+      <input class="caption-input" placeholder="Caption…" value="${g.caption}" oninput="state.gallery[${i}].caption=this.value">
+    </div>
+  `).join('');
+}
+
+function removeGalleryItem(i) { state.gallery.splice(i,1); renderGalleryGrid(); }
+function saveGallery() { saveState(); showToast('🖼️ Gallery saved!'); }
+
+// ─── EVENTS ───────────────────────────────────────────────────────────────────
+function renderEventsList() {
+  const ul = document.getElementById('eventsList');
+  if (!state.events.length) { ul.innerHTML = '<li style="color:var(--gray-500);font-size:13px;padding:10px 0;">No events added yet.</li>'; return; }
+  const sorted = [...state.events].sort((a,b) => new Date(a.date) - new Date(b.date));
+  ul.innerHTML = sorted.map((ev,i) => `
+    <li>
+      <span class="event-date-pill">${new Date(ev.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>
+      <span style="flex:1;font-weight:600;">${ev.name}</span>
+      <span style="color:var(--gray-500);font-size:12px;">📍 ${ev.place}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeEvent(${i})">×</button>
+    </li>
+  `).join('');
+}
+
+function addEvent() {
+  const d = document.getElementById('evDate').value;
+  const n = document.getElementById('evName').value.trim();
+  const p = document.getElementById('evPlace').value.trim();
+  if (!d || !n) { showToast('Please fill date and event name.', true); return; }
+  state.events.push({ date: d, name: n, place: p });
+  document.getElementById('evDate').value = '';
+  document.getElementById('evName').value = '';
+  document.getElementById('evPlace').value = '';
+  renderEventsList();
+}
+
+function removeEvent(i) { state.events.splice(i,1); renderEventsList(); }
+function saveEvents() { saveState(); showToast('📅 Events saved!'); }
+
+// ─── CLASSIFIEDS ──────────────────────────────────────────────────────────────
+const clBadges = { notice:'badge-notice', tender:'badge-tender', lost:'badge-lost', event:'badge-event', job:'badge-published' };
+const clLabels = { notice:'Govt Notice', tender:'Tender', lost:'Lost & Found', event:'Event', job:'Job' };
+
+function renderClassifiedsList() {
+  const el = document.getElementById('classifiedsList');
+  if (!state.classifieds.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No classifieds yet.</p>'; return; }
+  el.innerHTML = state.classifieds.map((c,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+      <span class="status-badge ${clBadges[c.type]||''}">${clLabels[c.type]||c.type}</span>
+      <span style="flex:1;font-size:13px;">${c.text}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeClassified(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addClassified() {
+  const type = document.getElementById('clType').value;
+  const text = document.getElementById('clText').value.trim();
+  if (!text) return;
+  state.classifieds.push({ type, text });
+  document.getElementById('clText').value = '';
+  renderClassifiedsList();
+}
+
+function removeClassified(i) { state.classifieds.splice(i,1); renderClassifiedsList(); }
+function saveClassifieds() { saveState(); showToast('📋 Classifieds saved!'); }
+
+// ─── WEATHER ──────────────────────────────────────────────────────────────────
+async function testWeather() {
+  const key  = document.getElementById('weatherKey').value.trim();
+  const city = document.getElementById('weatherCity').value.trim();
+  if (!key) { showToast('Please enter your API key first.', true); return; }
+  try {
+    const res  = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`);
+    const data = await res.json();
+    if (data.cod !== 200) { showToast('❌ API Error: ' + data.message, true); return; }
+    document.getElementById('wp-temp').textContent = Math.round(data.main.temp) + '°C';
+    document.getElementById('wp-desc').textContent = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+    document.getElementById('wp-hum').textContent  = data.main.humidity;
+    document.getElementById('wp-wind').textContent = Math.round(data.wind.speed * 3.6);
+    document.getElementById('wp-city').textContent = data.name;
+    document.getElementById('weatherPreview').style.display = 'block';
+    showToast('✅ Weather API working!');
+  } catch(e) {
+    showToast('❌ Failed to fetch weather. Check your API key.', true);
+  }
+}
+
+function saveWeather() {
+  state.weather.key  = document.getElementById('weatherKey').value.trim();
+  state.weather.city = document.getElementById('weatherCity').value.trim();
+  saveState();
+  showToast('⛅ Weather settings saved!');
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettingsForm() {
+  if (state.site) {
+    document.getElementById('siteName').value    = state.site.name || '';
+    document.getElementById('siteTagline').value = state.site.tagline || '';
+    document.getElementById('waLink').value      = state.site.wa || '';
+    document.getElementById('contactEmail').value= state.site.email || '';
+  }
+  if (state.weather) {
+    document.getElementById('weatherKey').value  = state.weather.key || '';
+    document.getElementById('weatherCity').value = state.weather.city || 'Bicholim,IN';
+  }
+  renderUsersList();
+}
+
+function saveSiteInfo() {
+  state.site = {
+    name:    document.getElementById('siteName').value,
+    tagline: document.getElementById('siteTagline').value,
+    wa:      document.getElementById('waLink').value,
+    email:   document.getElementById('contactEmail').value
+  };
+  saveState();
+  showToast('🌐 Site info saved!');
+}
+
+function changePassword() {
+  const curr = document.getElementById('currPass').value;
+  const nw   = document.getElementById('newPass').value;
+  const conf = document.getElementById('confPass').value;
+  const user = JSON.parse(sessionStorage.getItem('ub_logged'));
+  const found = users.find(u => u.username === user.username);
+  if (!found || found.password !== curr) { showToast('Current password is wrong.', true); return; }
+  if (nw !== conf) { showToast('New passwords do not match.', true); return; }
+  if (nw.length < 6) { showToast('Password must be at least 6 characters.', true); return; }
+  found.password = nw;
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  showToast('🔐 Password updated!');
+  ['currPass','newPass','confPass'].forEach(id => document.getElementById(id).value = '');
+}
+
+function addUser() {
+  const u = document.getElementById('newUser').value.trim();
+  const p = document.getElementById('newUserPass').value;
+  if (!u || !p) { showToast('Fill in username and password.', true); return; }
+  if (users.find(x => x.username === u)) { showToast('Username already exists.', true); return; }
+  users.push({ username: u, password: p, role: 'reporter' });
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  document.getElementById('newUser').value = '';
+  document.getElementById('newUserPass').value = '';
+  renderUsersList();
+  showToast('👤 User added!');
+}
+
+function renderUsersList() {
+  const el = document.getElementById('usersList');
+  el.innerHTML = users.map((u,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+      <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">${u.username[0].toUpperCase()}</div>
+      <span style="flex:1;font-size:13px;font-weight:500;">${u.username}</span>
+      <span style="font-size:11px;color:var(--gray-500);">${u.role}</span>
+      ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="removeUser(${i})">×</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function removeUser(i) {
+  if (!confirm('Remove this user?')) return;
+  users.splice(i,1);
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  renderUsersList();
+  showToast('👤 User removed.');
+}
+
+// ─── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'updatebicholim-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+}
+
+function importData(input) {
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      state = JSON.parse(e.target.result);
+      saveState();
+      renderAll();
+      showToast('✅ Backup restored!');
+    } catch {
+      showToast('❌ Invalid backup file.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+if (sessionStorage.getItem('ub_logged')) {
+  loadState();
+}
+</script>
+</body>
+</html>
