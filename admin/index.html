@@ -961,6 +961,10 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 const STORAGE_KEY = 'ub_admin_data';
 const USERS_KEY   = 'ub_users';
 
+// ── FIREBASE SETUP ─────────────────────────────────────────────
+// Using Firebase Firestore to sync data across all devices
+
+
 let state = {
   articles:    [],
   ticker:      [],
@@ -1491,5 +1495,116 @@ if (sessionStorage.getItem('ub_logged')) {
   loadState();
 }
 </script>
+
+<!-- Firebase Firestore Sync -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+
+let fbApp, fbDb;
+try{
+  fbApp = initializeApp(cfg);
+  fbDb  = getFirestore(fbApp);
+
+  // Override saveState to also save to Firestore
+  const _origSave = window.saveState;
+  window.saveToFirestore = async function() {
+    if(!fbDb) return;
+    try {
+      // Strip base64 images from articles for Firestore (too large)
+      // Store images in localStorage, metadata in Firestore
+      const fsState = JSON.parse(JSON.stringify(state));
+      fsState.articles = (fsState.articles||[]).map(a => {
+        const copy = {...a};
+        if(copy.image && copy.image.startsWith('data:')) {
+          // keep image in localStorage only, store flag in firestore
+          copy.hasLocalImage = true;
+          copy.image = '';
+        }
+        return copy;
+      });
+      fsState.gallery = (fsState.gallery||[]).map(g => ({...g, src: ''}));
+      await setDoc(doc(fbDb,'sitedata','main'), fsState);
+    } catch(e) { console.log('Firestore save:', e); }
+  };
+
+  // Patch saveState to call both localStorage and Firestore
+  const origSaveState = window.saveState;
+  window.saveState = function() {
+    // Save to localStorage (for images/gallery which are base64)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    sessionStorage.setItem('ub_news_data', JSON.stringify(state));
+    // Save metadata to Firestore (syncs across devices)
+    window.saveToFirestore();
+  };
+
+  // On load, merge Firestore data with localStorage
+  async function mergeFirestoreData() {
+    try {
+      const snap = await getDoc(doc(fbDb,'sitedata','main'));
+      if(!snap.exists()) return;
+      const fsData = snap.data();
+      // Merge: use Firestore for weather, ticker, liveFeed, events, classifieds, site
+      // Use localStorage for articles (has images) and gallery
+      const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+      
+      // Weather key from Firestore takes priority (set from any device)
+      if(fsData.weather) state.weather = fsData.weather;
+      if(fsData.ticker)  state.ticker  = fsData.ticker;
+      if(fsData.liveFeed) state.liveFeed = fsData.liveFeed;
+      if(fsData.events)  state.events  = fsData.events;
+      if(fsData.classifieds) state.classifieds = fsData.classifieds;
+      if(fsData.site)    state.site    = fsData.site;
+      
+      // For articles: merge Firestore article metadata with local images
+      if(fsData.articles && fsData.articles.length > 0) {
+        const localArts = localData.articles || [];
+        state.articles = fsData.articles.map(fa => {
+          const localArt = localArts.find(la => la.id === fa.id);
+          if(localArt && localArt.image) {
+            return {...fa, image: localArt.image};
+          }
+          return fa;
+        });
+      }
+      
+      renderAll();
+      showToast('☁️ Data synced from cloud!');
+    } catch(e) { console.log('Firestore load:', e); }
+  }
+
+  // Load Firestore data after login
+  const origLoadState = window.loadState;
+  window.loadState = function() {
+    origLoadState();
+    mergeFirestoreData();
+  };
+
+  // Real-time sync: when another device saves, reload
+  onSnapshot(doc(fbDb,'sitedata','main'), (snap) => {
+    if(!snap.exists()) return;
+    const fsData = snap.data();
+    const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+    let changed = false;
+    
+    if(fsData.weather && JSON.stringify(fsData.weather) !== JSON.stringify(state.weather)) {
+      state.weather = fsData.weather; changed = true;
+    }
+    if(fsData.ticker && JSON.stringify(fsData.ticker) !== JSON.stringify(state.ticker)) {
+      state.ticker = fsData.ticker; changed = true;
+    }
+    if(fsData.liveFeed && JSON.stringify(fsData.liveFeed) !== JSON.stringify(state.liveFeed)) {
+      state.liveFeed = fsData.liveFeed; changed = true;
+    }
+    if(changed) {
+      renderAll();
+    }
+  });
+
+} catch(e) { console.log('Firebase admin init:', e); }
+</script>
+
 </body>
 </html>
