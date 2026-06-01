@@ -647,37 +647,61 @@ function timeAgo(ts) {
 // ── REAL-TIME LISTENERS ─────────────────────────────────────────
 
 // 1. Site data (ticker, weather, events, classifieds, live feed)
-onSnapshot(doc(db,'sitedata','main'), snap => {
-  if (!snap.exists()) return;
-  siteData = snap.data();
-  renderTicker();
-  renderLive();
-  renderClassifieds();
-  renderEvents();
-  renderGallery();
-  // Update WhatsApp link
-  if (siteData.site?.wa) document.getElementById('waLink').href = siteData.site.wa;
-  // Load weather when key arrives
-  if (siteData.weather?.key) loadWeather();
-});
+onSnapshot(
+  doc(db,'sitedata','main'),
+  snap => {
+    if (!snap.exists()) return;
+    siteData = snap.data();
+    renderTicker();
+    renderLive();
+    renderClassifieds();
+    renderEvents();
+    renderGallery();
+    if (siteData.site?.wa) document.getElementById('waLink').href = siteData.site.wa;
+    if (siteData.weather?.key) loadWeather();
+    else document.getElementById('headerWeatherDesc').textContent = '⛅ Bicholim';
+  },
+  err => { console.error('Sitedata listener error:', err.message); }
+);
 
 // 2. Articles
-onSnapshot(query(collection(db,'articles'), orderBy('date','desc')), snap => {
-  articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderHero();
-  renderLatest();
-  renderMore();
-  renderTrend();
-  renderOpinion();
-  renderSection('indiaGrid',  'India',        articles);
-  renderSection('intlGrid',   'International', articles);
-  renderSection('sportsGrid', 'Sports',       articles);
-});
+onSnapshot(
+  query(collection(db,'articles'), orderBy('date','desc')),
+  snap => {
+    articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHero();
+    renderLatest();
+    renderMore();
+    renderTrend();
+    renderOpinion();
+    renderSection('indiaGrid',  'India',        articles);
+    renderSection('intlGrid',   'International', articles);
+    renderSection('sportsGrid', 'Sports',       articles);
+  },
+  err => {
+    console.error('Articles listener error:', err.message);
+    // Fallback: try without orderBy
+    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({getDocs}) => {
+      getDocs(collection(db,'articles')).then(snap => {
+        articles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date||0)-(a.date||0));
+        renderHero(); renderLatest(); renderMore(); renderTrend(); renderOpinion();
+        renderSection('indiaGrid','India',articles);
+        renderSection('intlGrid','International',articles);
+        renderSection('sportsGrid','Sports',articles);
+      });
+    });
+  }
+);
 
 // 3. People's news (approved community submissions)
-onSnapshot(query(collection(db,'submissions'), where('status','==','approved'), orderBy('submittedAt','desc'), limit(8)), snap => {
-  renderPeopleNews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-});
+// Wrapped in try-catch — needs Firestore composite index (status + submittedAt)
+try {
+  onSnapshot(
+    query(collection(db,'submissions'), where('status','==','approved'), orderBy('submittedAt','desc'), limit(8)),
+    snap => { renderPeopleNews(snap.docs.map(d => ({ id: d.id, ...d.data() }))); },
+    err => { console.log('Submissions index needed:', err.message); }
+  );
+} catch(e) { console.log('Submissions query:', e.message); }
 
 // ── RENDER FUNCTIONS ────────────────────────────────────────────
 
@@ -821,7 +845,7 @@ async function loadWeather() {
   const city = siteData.weather?.city || 'Bicholim,IN';
   if (!key) {
     document.getElementById('wDesc').textContent = 'Set up in Admin → Weather';
-    document.getElementById('hWxDesc').textContent = '⛅ Bicholim';
+    document.getElementById('headerWeatherDesc').textContent = '⛅ Bicholim';
     return;
   }
 
@@ -836,8 +860,8 @@ async function loadWeather() {
     document.getElementById('wIcon').textContent   = data.ic;
     document.getElementById('wHum').textContent    = '💧 Humidity ' + data.hum + '%';
     document.getElementById('wWind').textContent   = '💨 Wind ' + data.wind + ' km/h';
-    document.getElementById('hTemp').textContent   = data.tmp + '°';
-    document.getElementById('hWxDesc').textContent = data.ic + ' ' + data.desc + ' · Bicholim';
+    document.getElementById('headerTemp').textContent = data.tmp + '°';
+    document.getElementById('headerWeatherDesc').textContent = data.ic + ' ' + data.desc + ' · Bicholim';
     if (data.fore) document.getElementById('wFore').innerHTML = data.fore;
   }
 
@@ -1122,6 +1146,19 @@ document.getElementById('todayDate').textContent = '📅 '+new Date().toLocaleDa
 
 // Notification
 setTimeout(() => document.getElementById('notif').classList.add('show'), 5000);
+
+// Weather fallback — if siteData hasn't loaded after 3s, fetch directly from Firestore
+setTimeout(async () => {
+  if (siteData.weather?.key) return; // already loaded
+  try {
+    const { getDoc, doc: d2 } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const snap = await getDoc(d2(db, 'sitedata', 'main'));
+    if (snap.exists() && snap.data().weather?.key) {
+      siteData = { ...siteData, ...snap.data() };
+      loadWeather();
+    }
+  } catch(e) { console.log('Weather fallback:', e); }
+}, 3000);
 
 // Scroll fade-in
 const obs = new IntersectionObserver(entries => {
