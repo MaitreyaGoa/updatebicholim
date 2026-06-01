@@ -894,5 +894,53 @@ const pnObs=new MutationObserver(()=>{
 pnObs.observe(document.getElementById('pnModal'),{attributes:true,attributeFilter:['style']});
 </script>
 
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import{getFirestore,doc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+
+try{
+  const app = initializeApp(cfg, 'mainsite');
+  const db  = getFirestore(app);
+
+  // Listen for real-time updates from Firestore
+  onSnapshot(doc(db,'sitedata','main'), (snap) => {
+    if(!snap.exists()) return;
+    const fsData = snap.data();
+    
+    // Get local data (has images)
+    const localData = JSON.parse(localStorage.getItem('ub_admin_data')||'{}');
+    
+    // Merge: Firestore has latest metadata, localStorage has images
+    const merged = {...localData};
+    if(fsData.ticker)      merged.ticker      = fsData.ticker;
+    if(fsData.liveFeed)    merged.liveFeed    = fsData.liveFeed;
+    if(fsData.events)      merged.events      = fsData.events;
+    if(fsData.classifieds) merged.classifieds = fsData.classifieds;
+    if(fsData.site)        merged.site        = fsData.site;
+    if(fsData.weather)     merged.weather     = fsData.weather;
+    
+    // Merge articles: Firestore metadata + local images
+    if(fsData.articles && fsData.articles.length > 0) {
+      const localArts = localData.articles || [];
+      merged.articles = fsData.articles.map(fa => {
+        const localArt = localArts.find(la => la.id === fa.id);
+        if(localArt && localArt.image) return {...fa, image: localArt.image};
+        return fa;
+      });
+    }
+    
+    // Save merged to localStorage so getData() picks it up
+    localStorage.setItem('ub_admin_data', JSON.stringify(merged));
+    
+    // Re-render everything
+    if(typeof renderAll === 'function') renderAll();
+    if(typeof loadWeather === 'function') loadWeather();
+  });
+} catch(e){ console.log('Firestore main:', e); }
+</script>
+
 </body>
 </html>
