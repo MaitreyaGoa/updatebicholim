@@ -1019,6 +1019,10 @@ function loadState() {
     try { state = { ...state, ...JSON.parse(raw) }; } catch(e) {}
   }
   renderAll();
+  // Push existing data to Firestore so other devices can read it
+  setTimeout(() => {
+    if(window.saveToFirestore) window.saveToFirestore();
+  }, 2000);
 }
 
 function saveState() {
@@ -1378,7 +1382,12 @@ function saveWeather() {
   state.weather.key  = document.getElementById('weatherKey').value.trim();
   state.weather.city = document.getElementById('weatherCity').value.trim();
   saveState();
-  showToast('⛅ Weather settings saved!');
+  // Also push directly to Firestore so all devices get it immediately
+  if(window.saveToFirestore) {
+    window.saveToFirestore().then(() => showToast('⛅ Weather saved & synced to all devices!')).catch(() => showToast('⛅ Weather saved locally.'));
+  } else {
+    showToast('⛅ Weather settings saved!');
+  }
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
