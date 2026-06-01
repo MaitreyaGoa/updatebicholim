@@ -956,81 +956,123 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script>
-// ─── STATE ───────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'ub_admin_data';
-const USERS_KEY   = 'ub_users';
+<script type="module">
+// ================================================================
+// UPDATE BICHOLIM — ADMIN PORTAL
+// Pure Firestore backend — works on ALL devices, ALL browsers
+// ================================================================
 
-// ── FIREBASE SETUP ─────────────────────────────────────────────
-// Using Firebase Firestore to sync data across all devices
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, orderBy, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-
-let state = {
-  articles:    [],
-  ticker:      [],
-  liveFeed:    [],
-  gallery:     [],
-  events:      [],
-  classifieds: [],
-  weather:     { key: '', city: 'Bicholim,IN' },
-  site:        { name: 'Update Bicholim', tagline: "Goa's Trusted Local News", wa: '', email: '' }
+const FB = {
+  apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+  authDomain: "update-bicholim.firebaseapp.com",
+  projectId: "update-bicholim",
+  storageBucket: "update-bicholim.firebasestorage.app",
+  messagingSenderId: "430335270267",
+  appId: "1:430335270267:web:6bd9d92f267f98d10eb1de"
 };
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+const app = initializeApp(FB);
+const db  = getFirestore(app);
+
+// Firestore document references
+const SITE_REF  = doc(db, 'sitedata', 'main');    // ticker, live, events, classifieds, weather, site
+const ARTS_COL  = collection(db, 'articles');       // articles collection
+const USERS_KEY = 'ub_users';
+
+// ── LOCAL STATE (UI only, not stored) ──────────────────────────
+let siteData = { ticker:[], liveFeed:[], events:[], classifieds:[], weather:{key:'',city:'Bicholim,IN'}, site:{} };
+let articles  = [];
+let currentImg = '';
+let mediaFiles = [];
+
+// ── AUTH (local — admin users don't need cloud auth) ────────────
 let users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
 if (!users.length) {
-  users = [{ username: 'admin', password: 'bicholim2025', role: 'admin' }];
+  users = [{ username:'admin', password:'bicholim2025', role:'admin' }];
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
-function doLogin() {
+window.doLogin = () => {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
-  const found = users.find(x => x.username === u && x.password === p);
+  const found = users.find(x => x.username===u && x.password===p);
   if (found) {
     sessionStorage.setItem('ub_logged', JSON.stringify(found));
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('userNameDisplay').textContent = found.username;
-    document.getElementById('avatarInitial').textContent = found.username[0].toUpperCase();
-    loadState();
-    refreshDashboard();
+    document.getElementById('avatarInitial').textContent  = found.username[0].toUpperCase();
+    initFirestore();
   } else {
     document.getElementById('loginError').style.display = 'block';
   }
-}
+};
 
-function doLogout() {
-  sessionStorage.removeItem('ub_logged');
-  location.reload();
-}
+window.doLogout = () => { sessionStorage.removeItem('ub_logged'); location.reload(); };
 
-// Check if already logged in
+// Check already logged in
 if (sessionStorage.getItem('ub_logged')) {
   const u = JSON.parse(sessionStorage.getItem('ub_logged'));
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('userNameDisplay').textContent = u.username;
-  document.getElementById('avatarInitial').textContent = u.username[0].toUpperCase();
+  document.getElementById('avatarInitial').textContent  = u.username[0].toUpperCase();
+  initFirestore();
 }
 
-// ─── PERSISTENCE ──────────────────────────────────────────────────────────────
-function loadState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try { state = { ...state, ...JSON.parse(raw) }; } catch(e) {}
+// ── FIRESTORE INIT ──────────────────────────────────────────────
+async function initFirestore() {
+  // Load sitedata (ticker, weather, events etc.) — real-time listener
+  onSnapshot(SITE_REF, snap => {
+    if (snap.exists()) {
+      siteData = { ...siteData, ...snap.data() };
+    }
+    renderAll();
+    loadSettingsForm();
+  });
+
+  // Load articles — real-time listener
+  onSnapshot(query(ARTS_COL, orderBy('date','desc')), snap => {
+    articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAll();
+  });
+}
+
+// ── SAVE SITE DATA TO FIRESTORE ─────────────────────────────────
+async function saveSiteData(partial) {
+  try {
+    await setDoc(SITE_REF, { ...siteData, ...partial, updatedAt: Date.now() }, { merge: true });
+    showToast('✅ Saved & synced to all devices!');
+  } catch(e) {
+    showToast('❌ Save failed: ' + e.message, true);
   }
-  renderAll();
-  // Push existing data to Firestore so other devices can read it
-  setTimeout(() => {
-    if(window.saveToFirestore) window.saveToFirestore();
-  }, 2000);
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  // Also write to sessionStorage so main site can read it
-  sessionStorage.setItem('ub_news_data', JSON.stringify(state));
-}
+// ── NAVIGATION ──────────────────────────────────────────────────
+const pageTitles = {
+  'dashboard':'📊 Dashboard','add-news':'✏️ Add News Article',
+  'manage-news':'📰 Manage Articles','ticker':'📡 Breaking Ticker',
+  'live-feed':'⚡ Live Feed','gallery':'🖼️ Photo Gallery',
+  'events':'📅 Events Calendar','classifieds':'📋 Classifieds',
+  'weather':'⛅ Weather','settings':'⚙️ Settings'
+};
 
+window.showPage = (name, navEl) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  else document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes("'"+name+"'")) n.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent = pageTitles[name] || name;
+  if (name === 'manage-news') renderManageTable();
+  if (name === 'dashboard')   refreshDashboard();
+};
+
+// ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll() {
   renderManageTable();
   renderTickerList();
@@ -1039,64 +1081,38 @@ function renderAll() {
   renderEventsList();
   renderClassifiedsList();
   refreshDashboard();
-  loadSettingsForm();
 }
 
-// ─── NAVIGATION ───────────────────────────────────────────────────────────────
-const pageTitles = {
-  'dashboard': '📊 Dashboard', 'add-news': '✏️ Add News Article',
-  'manage-news': '📰 Manage Articles', 'ticker': '📡 Breaking Ticker',
-  'live-feed': '⚡ Live Feed', 'gallery': '🖼️ Photo Gallery',
-  'events': '📅 Events Calendar', 'classifieds': '📋 Classifieds',
-  'weather': '⛅ Weather', 'settings': '⚙️ Settings'
-};
-
-function showPage(name, navEl) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  if (navEl) navEl.classList.add('active');
-  else document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+name+"'")) n.classList.add('active');
-  });
-  document.getElementById('topbarTitle').textContent = pageTitles[name] || name;
-  if (name === 'manage-news') renderManageTable();
-  if (name === 'dashboard') refreshDashboard();
-}
-
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+// ── DASHBOARD ────────────────────────────────────────────────────
 function refreshDashboard() {
   const today = new Date().toDateString();
-  document.getElementById('stat-total').textContent = state.articles.length;
-  document.getElementById('stat-today').textContent = state.articles.filter(a => new Date(a.date).toDateString() === today).length;
-  document.getElementById('stat-breaking').textContent = state.ticker.length;
-  document.getElementById('stat-gallery').textContent = state.gallery.length;
+  document.getElementById('stat-total').textContent    = articles.length;
+  document.getElementById('stat-today').textContent    = articles.filter(a => new Date(a.date).toDateString()===today).length;
+  document.getElementById('stat-breaking').textContent = (siteData.ticker||[]).length;
+  document.getElementById('stat-gallery').textContent  = (siteData.gallery||[]).length;
 
   const tbody = document.getElementById('dashRecentTable');
-  const recent = [...state.articles].sort((a,b) => b.date - a.date).slice(0,5);
+  const recent = articles.slice(0, 5);
   if (!recent.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-500);">No articles yet. Add your first article!</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray-500);">No articles yet. Add your first!</td></tr>';
     return;
   }
   tbody.innerHTML = recent.map(a => `
     <tr>
       <td>${a.image ? `<img class="thumb" src="${a.image}" alt="">` : '📷'}</td>
-      <td><div class="headline">${a.title}</div></td>
+      <td><div class="headline" title="${a.title}">${a.title}</div></td>
       <td><span class="status-badge" style="background:#e8f4f8;color:#0c5460">${a.category}</span></td>
-      <td><span class="status-badge ${a.breaking ? 'badge-breaking' : (a.status==='draft' ? 'badge-draft' : 'badge-published')}">${a.breaking ? '🔴 Breaking' : a.status}</span></td>
+      <td><span class="status-badge ${a.breaking?'badge-breaking':a.status==='draft'?'badge-draft':'badge-published'}">${a.breaking?'🔴 Breaking':a.status}</span></td>
       <td>${new Date(a.date).toLocaleDateString('en-IN')}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}')">Delete</button></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
 
-// ─── ARTICLES ─────────────────────────────────────────────────────────────────
-let currentImg = '';
-
-function handleImgUpload(input) {
+// ── ARTICLES ─────────────────────────────────────────────────────
+window.handleImgUpload = (input) => {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Image too large! Max 5MB.', true); return; }
+  if (file.size > 5*1024*1024) { showToast('Image too large! Max 5MB.', true); return; }
   const reader = new FileReader();
   reader.onload = e => {
     currentImg = e.target.result;
@@ -1105,23 +1121,22 @@ function handleImgUpload(input) {
     document.getElementById('uploadArea').style.display = 'none';
   };
   reader.readAsDataURL(file);
-}
+};
 
-function removeImg() {
+window.removeImg = () => {
   currentImg = '';
   document.getElementById('imgPreview').style.display = 'none';
   document.getElementById('uploadArea').style.display = 'block';
   document.getElementById('imgInput').value = '';
-}
+};
 
-function gatherArticleData(status) {
+function gatherArticle(status) {
   const title    = document.getElementById('art-title').value.trim();
   const category = document.getElementById('art-category').value;
   const excerpt  = document.getElementById('art-excerpt').value.trim();
-  if (!title) { showToast('Please enter a headline!', true); return null; }
+  if (!title)    { showToast('Please enter a headline!', true); return null; }
   if (!category) { showToast('Please select a category!', true); return null; }
   return {
-    id:       Date.now().toString(),
     title, category, excerpt,
     body:     document.getElementById('art-body').value.trim(),
     author:   document.getElementById('art-author').value.trim() || 'Staff Reporter',
@@ -1135,40 +1150,67 @@ function gatherArticleData(status) {
   };
 }
 
-function publishArticle() {
-  const art = gatherArticleData('published');
+window.publishArticle = async () => {
+  const art = gatherArticle('published');
   if (!art) return;
-  state.articles.unshift(art);
-  if (art.breaking) state.ticker.unshift(art.title);
-  saveState();
-  clearForm();
-  showToast('✅ Article published successfully!');
-  refreshDashboard();
-}
+  const btn = document.querySelector('#page-add-news .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+  try {
+    await addDoc(ARTS_COL, art);
+    // If breaking, also add to ticker
+    if (art.breaking) {
+      const newTicker = [art.title, ...(siteData.ticker||[])];
+      await setDoc(SITE_REF, { ticker: newTicker, updatedAt: Date.now() }, { merge: true });
+    }
+    showToast('🚀 Article published & live on website!');
+    clearForm();
+  } catch(e) { showToast('❌ Failed: ' + e.message, true); }
+  finally { btn.disabled = false; btn.textContent = '🚀 Publish Article'; }
+};
 
-function saveAsDraft() {
-  const art = gatherArticleData('draft');
+window.saveAsDraft = async () => {
+  const art = gatherArticle('draft');
   if (!art) return;
-  state.articles.unshift(art);
-  saveState();
-  clearForm();
-  showToast('💾 Saved as draft.');
-}
+  try {
+    await addDoc(ARTS_COL, art);
+    showToast('💾 Saved as draft.');
+    clearForm();
+  } catch(e) { showToast('❌ Failed: ' + e.message, true); }
+};
 
-function clearForm() {
-  ['art-title','art-excerpt','art-body','art-author','art-location'].forEach(id => document.getElementById(id).value = '');
+window.deleteArticle = async (id) => {
+  if (!confirm('Delete this article?')) return;
+  try {
+    await deleteDoc(doc(db, 'articles', id));
+    showToast('🗑 Article deleted.');
+  } catch(e) { showToast('❌ Failed: ' + e.message, true); }
+};
+
+window.toggleStatus = async (id) => {
+  const art = articles.find(a => a.id===id);
+  if (!art) return;
+  try {
+    await updateDoc(doc(db,'articles',id), { status: art.status==='draft'?'published':'draft' });
+    showToast('✅ Status updated.');
+  } catch(e) { showToast('❌ Failed: ' + e.message, true); }
+};
+
+window.clearForm = () => {
+  ['art-title','art-excerpt','art-body','art-author','art-location'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
   document.getElementById('art-category').selectedIndex = 0;
-  document.getElementById('art-status').selectedIndex = 0;
+  document.getElementById('art-status').selectedIndex   = 0;
   document.getElementById('art-breaking').checked = false;
-  document.getElementById('art-hero').checked = false;
-  removeImg();
-  document.getElementById('saveStatus').textContent = '';
-}
+  document.getElementById('art-hero').checked     = false;
+  window.removeImg();
+};
 
 function renderManageTable() {
-  const cat  = document.getElementById('filterCat')?.value || '';
-  const list = cat ? state.articles.filter(a => a.category === cat) : state.articles;
+  const cat   = document.getElementById('filterCat')?.value || '';
+  const list  = cat ? articles.filter(a=>a.category===cat) : articles;
   const tbody = document.getElementById('manageTable');
+  if (!tbody) return;
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray-500);">No articles found.</td></tr>';
     return;
@@ -1178,442 +1220,338 @@ function renderManageTable() {
       <td>${a.image ? `<img class="thumb" src="${a.image}" alt="">` : '📷'}</td>
       <td><div class="headline" title="${a.title}">${a.title}</div></td>
       <td><span class="status-badge" style="background:#e8f4f8;color:#0c5460">${a.category}</span></td>
-      <td>${a.lang?.toUpperCase() || 'EN'}</td>
-      <td><span class="status-badge ${a.breaking ? 'badge-breaking' : (a.status==='draft' ? 'badge-draft' : 'badge-published')}">${a.breaking ? '🔴 Breaking' : a.status}</span></td>
+      <td>${(a.lang||'en').toUpperCase()}</td>
+      <td><span class="status-badge ${a.breaking?'badge-breaking':a.status==='draft'?'badge-draft':'badge-published'}">${a.breaking?'🔴 Breaking':a.status}</span></td>
       <td>${new Date(a.date).toLocaleDateString('en-IN')}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-sm" style="background:#e8f4f8;color:#0c5460;" onclick="toggleStatus('${a.id}')">${a.status==='draft'?'Publish':'Unpublish'}</button>
         <button class="btn btn-danger btn-sm" onclick="deleteArticle('${a.id}')">Delete</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
 
-function deleteArticle(id) {
-  if (!confirm('Delete this article?')) return;
-  state.articles = state.articles.filter(a => a.id !== id);
-  saveState();
-  renderManageTable();
-  refreshDashboard();
-  showToast('🗑 Article deleted.');
-}
-
-function toggleStatus(id) {
-  const a = state.articles.find(x => x.id === id);
-  if (a) a.status = a.status === 'draft' ? 'published' : 'draft';
-  saveState();
-  renderManageTable();
-  showToast('✅ Status updated.');
-}
-
-// ─── TICKER ───────────────────────────────────────────────────────────────────
+// ── TICKER ───────────────────────────────────────────────────────
 function renderTickerList() {
   const ul = document.getElementById('tickerList');
-  if (!state.ticker.length) { ul.innerHTML = '<li style="padding:16px;color:var(--gray-500);font-size:13px;">No ticker items yet.</li>'; return; }
-  ul.innerHTML = state.ticker.map((t,i) => `
+  if (!ul) return;
+  const items = siteData.ticker||[];
+  if (!items.length) { ul.innerHTML = '<li style="padding:16px;color:var(--gray-500);font-size:13px;">No ticker items yet.</li>'; return; }
+  ul.innerHTML = items.map((t,i) => `
     <li>
       <span class="ticker-drag">⠿</span>
       <span class="ticker-text">${t}</span>
       <button class="ticker-remove" onclick="removeTicker(${i})">×</button>
-    </li>
-  `).join('');
+    </li>`).join('');
 }
 
-function addTickerItem() {
+window.addTickerItem = () => {
   const val = document.getElementById('tickerInput').value.trim();
   if (!val) return;
-  state.ticker.unshift(val);
+  siteData.ticker = [val, ...(siteData.ticker||[])];
   document.getElementById('tickerInput').value = '';
   renderTickerList();
-}
+};
 
-function quickAddTicker() {
+window.removeTicker = (i) => {
+  siteData.ticker.splice(i,1);
+  renderTickerList();
+};
+
+window.saveTicker = async () => {
+  await saveSiteData({ ticker: siteData.ticker||[] });
+};
+
+window.quickAddTicker = async () => {
   const val = document.getElementById('quickTicker').value.trim();
   if (!val) return;
-  state.ticker.unshift(val);
+  const newTicker = [val, ...(siteData.ticker||[])];
   document.getElementById('quickTicker').value = '';
-  saveState();
-  refreshDashboard();
-  showToast('📡 Added to breaking ticker!');
-}
+  await saveSiteData({ ticker: newTicker });
+};
 
-function removeTicker(i) { state.ticker.splice(i,1); renderTickerList(); }
-
-function saveTicker() { saveState(); showToast('📡 Ticker saved!'); }
-
-// ─── LIVE FEED ────────────────────────────────────────────────────────────────
+// ── LIVE FEED ────────────────────────────────────────────────────
 function renderLiveFeedList() {
   const el = document.getElementById('liveFeedList');
-  if (!state.liveFeed.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No live updates yet.</p>'; return; }
-  el.innerHTML = state.liveFeed.map((item,i) => `
+  if (!el) return;
+  const feed = siteData.liveFeed||[];
+  if (!feed.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No live updates yet.</p>'; return; }
+  el.innerHTML = feed.map((item,i) => `
     <div class="live-admin-item">
       <div class="live-admin-time">${item.time}</div>
       <div class="live-admin-text">${item.text}</div>
       <button class="live-admin-remove" onclick="removeLive(${i})">×</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function addLiveItem() {
+window.addLiveItem = () => {
   const text = document.getElementById('liveInput').value.trim();
   if (!text) return;
-  const now = new Date();
-  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-  state.liveFeed.unshift({ time, text, date: Date.now() });
+  const now  = new Date();
+  const time = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  siteData.liveFeed = [{ time, text, date:Date.now() }, ...(siteData.liveFeed||[])];
   document.getElementById('liveInput').value = '';
   renderLiveFeedList();
-}
+};
 
-function removeLive(i) { state.liveFeed.splice(i,1); renderLiveFeedList(); }
+window.removeLive = (i) => { siteData.liveFeed.splice(i,1); renderLiveFeedList(); };
 
-function saveLiveFeed() { saveState(); showToast('⚡ Live feed saved!'); }
+window.saveLiveFeed = async () => { await saveSiteData({ liveFeed: siteData.liveFeed||[] }); };
 
-// ─── GALLERY ──────────────────────────────────────────────────────────────────
-function handleGalleryUpload(input) {
-  const files = Array.from(input.files);
-  let loaded = 0;
+// ── GALLERY ──────────────────────────────────────────────────────
+window.handleGalleryUpload = (input) => {
+  const files = Array.from(input.files).slice(0,5);
+  let loaded  = 0;
   files.forEach(file => {
-    if (file.size > 5*1024*1024) return;
     const reader = new FileReader();
     reader.onload = e => {
-      state.gallery.push({ src: e.target.result, caption: '', id: Date.now()+Math.random() });
+      siteData.gallery = [...(siteData.gallery||[]), { src: e.target.result, caption:'', id: Date.now()+Math.random() }];
       loaded++;
-      if (loaded === files.length) renderGalleryGrid();
+      if (loaded===files.length) renderGalleryGrid();
     };
     reader.readAsDataURL(file);
   });
-}
+};
 
 function renderGalleryGrid() {
   const grid = document.getElementById('galleryGrid');
-  if (!state.gallery.length) { grid.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">No gallery photos yet.</p>'; return; }
-  grid.innerHTML = state.gallery.map((g,i) => `
+  if (!grid) return;
+  const photos = siteData.gallery||[];
+  if (!photos.length) { grid.innerHTML = '<p style="color:var(--gray-500);font-size:13px;">No gallery photos yet.</p>'; return; }
+  grid.innerHTML = photos.map((g,i) => `
     <div class="gallery-admin-item">
       <img src="${g.src}" alt="${g.caption}">
       <button class="remove" onclick="removeGalleryItem(${i})">×</button>
-      <input class="caption-input" placeholder="Caption…" value="${g.caption}" oninput="state.gallery[${i}].caption=this.value">
-    </div>
-  `).join('');
+      <input class="caption-input" placeholder="Caption…" value="${g.caption}" oninput="siteData.gallery[${i}].caption=this.value">
+    </div>`).join('');
 }
 
-function removeGalleryItem(i) { state.gallery.splice(i,1); renderGalleryGrid(); }
-function saveGallery() { saveState(); showToast('🖼️ Gallery saved!'); }
+window.removeGalleryItem = (i) => { siteData.gallery.splice(i,1); renderGalleryGrid(); };
 
-// ─── EVENTS ───────────────────────────────────────────────────────────────────
+window.saveGallery = async () => {
+  // Gallery has base64 images — strip src for Firestore, keep captions
+  // Store full gallery in Firestore (base64 is fine for small images)
+  await saveSiteData({ gallery: siteData.gallery||[] });
+};
+
+// ── EVENTS ───────────────────────────────────────────────────────
 function renderEventsList() {
   const ul = document.getElementById('eventsList');
-  if (!state.events.length) { ul.innerHTML = '<li style="color:var(--gray-500);font-size:13px;padding:10px 0;">No events added yet.</li>'; return; }
-  const sorted = [...state.events].sort((a,b) => new Date(a.date) - new Date(b.date));
-  ul.innerHTML = sorted.map((ev,i) => `
+  if (!ul) return;
+  const evs = siteData.events||[];
+  if (!evs.length) { ul.innerHTML = '<li style="color:var(--gray-500);font-size:13px;padding:10px 0;">No events yet.</li>'; return; }
+  ul.innerHTML = [...evs].sort((a,b)=>new Date(a.date)-new Date(b.date)).map((ev,i) => `
     <li>
       <span class="event-date-pill">${new Date(ev.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</span>
       <span style="flex:1;font-weight:600;">${ev.name}</span>
       <span style="color:var(--gray-500);font-size:12px;">📍 ${ev.place}</span>
       <button class="btn btn-danger btn-sm" onclick="removeEvent(${i})">×</button>
-    </li>
-  `).join('');
+    </li>`).join('');
 }
 
-function addEvent() {
+window.addEvent = () => {
   const d = document.getElementById('evDate').value;
   const n = document.getElementById('evName').value.trim();
   const p = document.getElementById('evPlace').value.trim();
-  if (!d || !n) { showToast('Please fill date and event name.', true); return; }
-  state.events.push({ date: d, name: n, place: p });
+  if (!d||!n) { showToast('Please fill date and event name.', true); return; }
+  siteData.events = [...(siteData.events||[]), { date:d, name:n, place:p }];
   document.getElementById('evDate').value = '';
   document.getElementById('evName').value = '';
   document.getElementById('evPlace').value = '';
   renderEventsList();
-}
+};
 
-function removeEvent(i) { state.events.splice(i,1); renderEventsList(); }
-function saveEvents() { saveState(); showToast('📅 Events saved!'); }
+window.removeEvent = (i) => { siteData.events.splice(i,1); renderEventsList(); };
 
-// ─── CLASSIFIEDS ──────────────────────────────────────────────────────────────
-const clBadges = { notice:'badge-notice', tender:'badge-tender', lost:'badge-lost', event:'badge-event', job:'badge-published' };
+window.saveEvents = async () => { await saveSiteData({ events: siteData.events||[] }); };
+
+// ── CLASSIFIEDS ──────────────────────────────────────────────────
+const clBadges = { notice:'badge-notice', tender:'badge-tender', lost:'badge-lost', event:'badge-event' };
 const clLabels = { notice:'Govt Notice', tender:'Tender', lost:'Lost & Found', event:'Event', job:'Job' };
 
 function renderClassifiedsList() {
   const el = document.getElementById('classifiedsList');
-  if (!state.classifieds.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No classifieds yet.</p>'; return; }
-  el.innerHTML = state.classifieds.map((c,i) => `
+  if (!el) return;
+  const items = siteData.classifieds||[];
+  if (!items.length) { el.innerHTML = '<p style="color:var(--gray-500);font-size:13px;padding:10px 0;">No classifieds yet.</p>'; return; }
+  el.innerHTML = items.map((c,i) => `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
       <span class="status-badge ${clBadges[c.type]||''}">${clLabels[c.type]||c.type}</span>
       <span style="flex:1;font-size:13px;">${c.text}</span>
       <button class="btn btn-danger btn-sm" onclick="removeClassified(${i})">×</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function addClassified() {
+window.addClassified = () => {
   const type = document.getElementById('clType').value;
   const text = document.getElementById('clText').value.trim();
   if (!text) return;
-  state.classifieds.push({ type, text });
+  siteData.classifieds = [...(siteData.classifieds||[]), { type, text }];
   document.getElementById('clText').value = '';
   renderClassifiedsList();
-}
+};
 
-function removeClassified(i) { state.classifieds.splice(i,1); renderClassifiedsList(); }
-function saveClassifieds() { saveState(); showToast('📋 Classifieds saved!'); }
+window.removeClassified = (i) => { siteData.classifieds.splice(i,1); renderClassifiedsList(); };
 
-// ─── WEATHER ──────────────────────────────────────────────────────────────────
-async function testWeather() {
+window.saveClassifieds = async () => { await saveSiteData({ classifieds: siteData.classifieds||[] }); };
+
+// ── WEATHER ──────────────────────────────────────────────────────
+window.testWeather = async () => {
   const key  = document.getElementById('weatherKey').value.trim();
   const city = document.getElementById('weatherCity').value.trim();
   if (!key) { showToast('Please enter your API key first.', true); return; }
   try {
     const res  = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`);
     const data = await res.json();
-    if (data.cod !== 200) { showToast('❌ API Error: ' + data.message, true); return; }
-    document.getElementById('wp-temp').textContent = Math.round(data.main.temp) + '°C';
-    document.getElementById('wp-desc').textContent = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+    if (data.cod!==200) { showToast('❌ API Error: ' + data.message, true); return; }
+    document.getElementById('wp-temp').textContent = Math.round(data.main.temp)+'°C';
+    document.getElementById('wp-desc').textContent = data.weather[0].description;
     document.getElementById('wp-hum').textContent  = data.main.humidity;
-    document.getElementById('wp-wind').textContent = Math.round(data.wind.speed * 3.6);
+    document.getElementById('wp-wind').textContent = Math.round(data.wind.speed*3.6);
     document.getElementById('wp-city').textContent = data.name;
     document.getElementById('weatherPreview').style.display = 'block';
     showToast('✅ Weather API working!');
-  } catch(e) {
-    showToast('❌ Failed to fetch weather. Check your API key.', true);
-  }
-}
+  } catch(e) { showToast('❌ Failed to fetch weather.', true); }
+};
 
-function saveWeather() {
-  state.weather.key  = document.getElementById('weatherKey').value.trim();
-  state.weather.city = document.getElementById('weatherCity').value.trim();
-  saveState();
-  // Also push directly to Firestore so all devices get it immediately
-  if(window.saveToFirestore) {
-    window.saveToFirestore().then(() => showToast('⛅ Weather saved & synced to all devices!')).catch(() => showToast('⛅ Weather saved locally.'));
-  } else {
-    showToast('⛅ Weather settings saved!');
-  }
-}
+window.saveWeather = async () => {
+  const key  = document.getElementById('weatherKey').value.trim();
+  const city = document.getElementById('weatherCity').value.trim();
+  siteData.weather = { key, city };
+  await saveSiteData({ weather: { key, city } });
+};
 
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+// ── SETTINGS ────────────────────────────────────────────────────
 function loadSettingsForm() {
-  if (state.site) {
-    document.getElementById('siteName').value    = state.site.name || '';
-    document.getElementById('siteTagline').value = state.site.tagline || '';
-    document.getElementById('waLink').value      = state.site.wa || '';
-    document.getElementById('contactEmail').value= state.site.email || '';
-  }
-  if (state.weather) {
-    document.getElementById('weatherKey').value  = state.weather.key || '';
-    document.getElementById('weatherCity').value = state.weather.city || 'Bicholim,IN';
-  }
+  const wx = siteData.weather||{};
+  const si = siteData.site||{};
+  const wkEl = document.getElementById('weatherKey');
+  const wcEl = document.getElementById('weatherCity');
+  if (wkEl && wx.key  && !wkEl.value) wkEl.value = wx.key;
+  if (wcEl && wx.city && !wcEl.value) wcEl.value = wx.city;
+  const snEl = document.getElementById('siteName');
+  const stEl = document.getElementById('siteTagline');
+  const waEl = document.getElementById('waLink_setting');
+  const ceEl = document.getElementById('contactEmail');
+  if (snEl && si.name    && !snEl.value) snEl.value = si.name;
+  if (stEl && si.tagline && !stEl.value) stEl.value = si.tagline;
+  if (waEl && si.wa      && !waEl.value) waEl.value = si.wa;
+  if (ceEl && si.email   && !ceEl.value) ceEl.value = si.email;
   renderUsersList();
 }
 
-function saveSiteInfo() {
-  state.site = {
+window.saveSiteInfo = async () => {
+  const site = {
     name:    document.getElementById('siteName').value,
     tagline: document.getElementById('siteTagline').value,
-    wa:      document.getElementById('waLink').value,
+    wa:      document.getElementById('waLink_setting')?.value || '',
     email:   document.getElementById('contactEmail').value
   };
-  saveState();
-  showToast('🌐 Site info saved!');
-}
+  await saveSiteData({ site });
+};
 
-function changePassword() {
-  const curr = document.getElementById('currPass').value;
-  const nw   = document.getElementById('newPass').value;
-  const conf = document.getElementById('confPass').value;
-  const user = JSON.parse(sessionStorage.getItem('ub_logged'));
-  const found = users.find(u => u.username === user.username);
-  if (!found || found.password !== curr) { showToast('Current password is wrong.', true); return; }
-  if (nw !== conf) { showToast('New passwords do not match.', true); return; }
-  if (nw.length < 6) { showToast('Password must be at least 6 characters.', true); return; }
+window.changePassword = () => {
+  const curr  = document.getElementById('currPass').value;
+  const nw    = document.getElementById('newPass').value;
+  const conf  = document.getElementById('confPass').value;
+  const uData = JSON.parse(sessionStorage.getItem('ub_logged'));
+  const found = users.find(u => u.username===uData.username);
+  if (!found||found.password!==curr) { showToast('Current password is wrong.', true); return; }
+  if (nw!==conf)   { showToast('New passwords do not match.', true); return; }
+  if (nw.length<6) { showToast('Password must be at least 6 characters.', true); return; }
   found.password = nw;
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   showToast('🔐 Password updated!');
-  ['currPass','newPass','confPass'].forEach(id => document.getElementById(id).value = '');
-}
+  ['currPass','newPass','confPass'].forEach(id => document.getElementById(id).value='');
+};
 
-function addUser() {
+window.addUser = () => {
   const u = document.getElementById('newUser').value.trim();
   const p = document.getElementById('newUserPass').value;
-  if (!u || !p) { showToast('Fill in username and password.', true); return; }
-  if (users.find(x => x.username === u)) { showToast('Username already exists.', true); return; }
-  users.push({ username: u, password: p, role: 'reporter' });
+  if (!u||!p) { showToast('Fill in username and password.', true); return; }
+  if (users.find(x=>x.username===u)) { showToast('Username already exists.', true); return; }
+  users.push({ username:u, password:p, role:'reporter' });
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   document.getElementById('newUser').value = '';
   document.getElementById('newUserPass').value = '';
   renderUsersList();
   showToast('👤 User added!');
-}
+};
 
-function renderUsersList() {
-  const el = document.getElementById('usersList');
-  el.innerHTML = users.map((u,i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
-      <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">${u.username[0].toUpperCase()}</div>
-      <span style="flex:1;font-size:13px;font-weight:500;">${u.username}</span>
-      <span style="font-size:11px;color:var(--gray-500);">${u.role}</span>
-      ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="removeUser(${i})">×</button>` : ''}
-    </div>
-  `).join('');
-}
-
-function removeUser(i) {
+window.removeUser = (i) => {
   if (!confirm('Remove this user?')) return;
   users.splice(i,1);
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   renderUsersList();
   showToast('👤 User removed.');
+};
+
+function renderUsersList() {
+  const el = document.getElementById('usersList');
+  if (!el) return;
+  el.innerHTML = users.map((u,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+      <div class="user-avatar" style="width:28px;height:28px;font-size:12px;">${u.username[0].toUpperCase()}</div>
+      <span style="flex:1;font-size:13px;font-weight:500;">${u.username}</span>
+      <span style="font-size:11px;color:var(--gray-500);">${u.role}</span>
+      ${u.username!=='admin'?`<button class="btn btn-danger btn-sm" onclick="removeUser(${i})">×</button>`:''}
+    </div>`).join('');
 }
 
-// ─── EXPORT / IMPORT ──────────────────────────────────────────────────────────
-function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'updatebicholim-backup-' + new Date().toISOString().split('T')[0] + '.json';
+// ── EXPORT / IMPORT ──────────────────────────────────────────────
+window.exportData = async () => {
+  const allArts = articles;
+  const backup  = { ...siteData, articles: allArts, exportedAt: new Date().toISOString() };
+  const blob    = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+  const a       = document.createElement('a');
+  a.href        = URL.createObjectURL(blob);
+  a.download    = 'updatebicholim-backup-' + new Date().toISOString().split('T')[0] + '.json';
   a.click();
-}
+};
 
-function importData(input) {
-  const file = input.files[0];
+window.importData = async (input) => {
+  const file   = input.files[0];
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
-      state = JSON.parse(e.target.result);
-      saveState();
-      renderAll();
-      showToast('✅ Backup restored!');
-    } catch {
-      showToast('❌ Invalid backup file.', true);
-    }
+      const data = JSON.parse(e.target.result);
+      // Restore sitedata
+      const { articles: arts, exportedAt, ...site } = data;
+      await setDoc(SITE_REF, { ...site, updatedAt: Date.now() }, { merge: true });
+      // Restore articles
+      if (arts && arts.length) {
+        for (const art of arts) {
+          const { id, ...artData } = art;
+          await addDoc(ARTS_COL, artData);
+        }
+      }
+      showToast('✅ Backup restored to Firestore!');
+    } catch(e2) { showToast('❌ Invalid backup file.', true); }
   };
   reader.readAsText(file);
-}
+};
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
+// ── TOAST ────────────────────────────────────────────────────────
 let toastTimer;
-function showToast(msg, isError=false) {
+window.showToast = (msg, isError=false) => {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  t.className   = 'toast' + (isError?' error':'') + ' show';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+};
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-if (sessionStorage.getItem('ub_logged')) {
-  loadState();
-}
+// ── HAMBURGER ────────────────────────────────────────────────────
+document.getElementById('hamburgerBtn')?.addEventListener('click', () => {
+  document.getElementById('mobileNav').classList.add('open');
+  document.getElementById('mobileOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+window.closeMobileNav = () => {
+  document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
 </script>
-
-<!-- Firebase Firestore Sync -->
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
-
-let fbApp, fbDb;
-try{
-  fbApp = initializeApp(cfg);
-  fbDb  = getFirestore(fbApp);
-
-  // Override saveState to also save to Firestore
-  const _origSave = window.saveState;
-  window.saveToFirestore = async function() {
-    if(!fbDb) return;
-    try {
-      // Strip base64 images from articles for Firestore (too large)
-      // Store images in localStorage, metadata in Firestore
-      const fsState = JSON.parse(JSON.stringify(state));
-      fsState.articles = (fsState.articles||[]).map(a => {
-        const copy = {...a};
-        if(copy.image && copy.image.startsWith('data:')) {
-          // keep image in localStorage only, store flag in firestore
-          copy.hasLocalImage = true;
-          copy.image = '';
-        }
-        return copy;
-      });
-      fsState.gallery = (fsState.gallery||[]).map(g => ({...g, src: ''}));
-      await setDoc(doc(fbDb,'sitedata','main'), fsState);
-    } catch(e) { console.log('Firestore save:', e); }
-  };
-
-  // Patch saveState to call both localStorage and Firestore
-  const origSaveState = window.saveState;
-  window.saveState = function() {
-    // Save to localStorage (for images/gallery which are base64)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    sessionStorage.setItem('ub_news_data', JSON.stringify(state));
-    // Save metadata to Firestore (syncs across devices)
-    window.saveToFirestore();
-  };
-
-  // On load, merge Firestore data with localStorage
-  async function mergeFirestoreData() {
-    try {
-      const snap = await getDoc(doc(fbDb,'sitedata','main'));
-      if(!snap.exists()) return;
-      const fsData = snap.data();
-      // Merge: use Firestore for weather, ticker, liveFeed, events, classifieds, site
-      // Use localStorage for articles (has images) and gallery
-      const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-      
-      // Weather key from Firestore takes priority (set from any device)
-      if(fsData.weather) state.weather = fsData.weather;
-      if(fsData.ticker)  state.ticker  = fsData.ticker;
-      if(fsData.liveFeed) state.liveFeed = fsData.liveFeed;
-      if(fsData.events)  state.events  = fsData.events;
-      if(fsData.classifieds) state.classifieds = fsData.classifieds;
-      if(fsData.site)    state.site    = fsData.site;
-      
-      // For articles: merge Firestore article metadata with local images
-      if(fsData.articles && fsData.articles.length > 0) {
-        const localArts = localData.articles || [];
-        state.articles = fsData.articles.map(fa => {
-          const localArt = localArts.find(la => la.id === fa.id);
-          if(localArt && localArt.image) {
-            return {...fa, image: localArt.image};
-          }
-          return fa;
-        });
-      }
-      
-      renderAll();
-      showToast('☁️ Data synced from cloud!');
-    } catch(e) { console.log('Firestore load:', e); }
-  }
-
-  // Load Firestore data after login
-  const origLoadState = window.loadState;
-  window.loadState = function() {
-    origLoadState();
-    mergeFirestoreData();
-  };
-
-  // Real-time sync: when another device saves, reload
-  onSnapshot(doc(fbDb,'sitedata','main'), (snap) => {
-    if(!snap.exists()) return;
-    const fsData = snap.data();
-    const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-    let changed = false;
-    
-    if(fsData.weather && JSON.stringify(fsData.weather) !== JSON.stringify(state.weather)) {
-      state.weather = fsData.weather; changed = true;
-    }
-    if(fsData.ticker && JSON.stringify(fsData.ticker) !== JSON.stringify(state.ticker)) {
-      state.ticker = fsData.ticker; changed = true;
-    }
-    if(fsData.liveFeed && JSON.stringify(fsData.liveFeed) !== JSON.stringify(state.liveFeed)) {
-      state.liveFeed = fsData.liveFeed; changed = true;
-    }
-    if(changed) {
-      renderAll();
-    }
-  });
-
-} catch(e) { console.log('Firebase admin init:', e); }
-</script>
-
 </body>
 </html>
