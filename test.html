@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Firestore Test</title>
+<style>
+body{font-family:monospace;padding:20px;background:#111;color:#0f0;font-size:14px;}
+.ok{color:#0f0;} .err{color:#f44;} .info{color:#ff0;}
+</style>
+</head>
+<body>
+<h2 style="color:#fff;">🔥 Firestore Connection Test</h2>
+<div id="log"></div>
+
+<script type="module">
+function log(msg, type='info') {
+  const d = document.createElement('div');
+  d.className = type;
+  d.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  document.getElementById('log').appendChild(d);
+}
+
+log('Starting Firebase test...', 'info');
+
+try {
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+  log('✅ Firebase app module loaded', 'ok');
+
+  const { getFirestore, collection, getDocs, doc, getDoc, query, orderBy } = 
+    await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+  log('✅ Firestore module loaded', 'ok');
+
+  const app = initializeApp({
+    apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+    authDomain: "update-bicholim.firebaseapp.com",
+    projectId: "update-bicholim",
+    storageBucket: "update-bicholim.firebasestorage.app",
+    messagingSenderId: "430335270267",
+    appId: "1:430335270267:web:6bd9d92f267f98d10eb1de"
+  });
+  log('✅ Firebase app initialised', 'ok');
+
+  const db = getFirestore(app);
+  log('✅ Firestore db created', 'ok');
+
+  // Test 1: Read sitedata/main
+  log('Testing sitedata/main read...', 'info');
+  try {
+    const snap = await getDoc(doc(db, 'sitedata', 'main'));
+    if (snap.exists()) {
+      const data = snap.data();
+      log('✅ sitedata/main EXISTS — keys: ' + Object.keys(data).join(', '), 'ok');
+      log('   ticker items: ' + (data.ticker?.length || 0), 'ok');
+      log('   weather key: ' + (data.weather?.key ? 'SET (' + data.weather.key.substring(0,8) + '...)' : 'NOT SET ⚠️'), data.weather?.key ? 'ok' : 'err');
+    } else {
+      log('❌ sitedata/main does NOT exist — seed data not loaded!', 'err');
+    }
+  } catch(e) {
+    log('❌ sitedata read ERROR: ' + e.message, 'err');
+  }
+
+  // Test 2: Read articles collection
+  log('Testing articles collection...', 'info');
+  try {
+    const snap = await getDocs(collection(db, 'articles'));
+    log('✅ articles collection — ' + snap.size + ' documents found', snap.size > 0 ? 'ok' : 'err');
+    if (snap.size > 0) {
+      const first = snap.docs[0].data();
+      log('   First article: ' + first.title?.substring(0, 50), 'ok');
+      log('   Has section field: ' + (first.section ? first.section : 'MISSING ⚠️'), first.section ? 'ok' : 'err');
+      log('   Has date field: ' + (first.date ? new Date(first.date).toLocaleDateString() : 'MISSING ⚠️'), first.date ? 'ok' : 'err');
+    }
+  } catch(e) {
+    log('❌ articles read ERROR: ' + e.message, 'err');
+  }
+
+  // Test 3: orderBy query
+  log('Testing orderBy query on articles...', 'info');
+  try {
+    const snap = await getDocs(query(collection(db, 'articles'), orderBy('date', 'desc')));
+    log('✅ orderBy(date) query works — ' + snap.size + ' results', 'ok');
+  } catch(e) {
+    log('❌ orderBy query ERROR: ' + e.message + ' — INDEX MISSING!', 'err');
+  }
+
+  log('--- TEST COMPLETE ---', 'info');
+
+} catch(e) {
+  log('❌ FATAL ERROR: ' + e.message, 'err');
+}
+</script>
+</body>
+</html>
