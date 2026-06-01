@@ -253,6 +253,61 @@
   @media (max-width: 1024px) { .content-wrapper { grid-template-columns: 1fr; } .opinion-grid { grid-template-columns: 1fr 1fr; } .footer-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 768px) { .hero-grid { grid-template-columns: 1fr; } .news-grid { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr 1fr; } .gallery-item:first-child { height: 200px; } .gallery-item { height: 120px; } .opinion-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; gap: 24px; } .nav-links { display: none; } .nav-search { display: none; } .hamburger { display: flex; } .top-nav-links { display: none; } }
   @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
+
+
+/* ── MOBILE CARD EFFECTS ───────────────────────────────── */
+@media (max-width: 768px) {
+  .news-feature-img { height: 180px; }
+  .news-feature-title { font-size: 17px; }
+
+  /* Mobile swipe-feel for news cards */
+  .news-grid { 
+    display: flex; 
+    overflow-x: auto; 
+    gap: 14px; 
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .news-grid::-webkit-scrollbar { display: none; }
+  .ncard { 
+    flex: 0 0 260px; 
+    scroll-snap-align: start;
+    border-radius: 3px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  .ncard-img { height: 140px; }
+
+  /* Mobile touch ripple effect */
+  .ncard, .lnews-item, .trend-item {
+    -webkit-tap-highlight-color: rgba(187,25,25,.08);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .ncard:active { transform: scale(.98); }
+  .lnews-item:active { background: rgba(187,25,25,.04); }
+
+  .people-news-grid-mob { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  .ncard { flex: 0 0 230px; }
+  .people-news-grid-mob { grid-template-columns: 1fr !important; }
+  .news-feature-img { height: 160px; }
+}
+
+/* ── SWIPE HINT ──────────────────────────────────────────── */
+.swipe-hint {
+  display: none;
+  font-family: var(--fu);
+  font-size: 11px;
+  color: var(--g500);
+  text-align: right;
+  margin-bottom: 6px;
+  animation: fadeIn .5s ease;
+}
+@media (max-width: 768px) { .swipe-hint { display: block; } }
+
 </style>
 </head>
 <body>
@@ -451,6 +506,47 @@
 </main>
 
 
+<!-- INDIA NEWS — same structure/classes as Goa sections -->
+<section style="padding:40px 0 0;" id="indiaSec">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🇮🇳 India News</h2>
+      <a href="#" onclick="filterCat('India',this);return false;" class="section-link">More India →</a>
+    </div>
+    <div class="news-grid" id="indiaGrid">
+      <div class="empty-placeholder" style="grid-column:span 3"><div class="icon">🇮🇳</div>Loading India news…</div>
+    </div>
+  </div>
+</section>
+
+<!-- INTERNATIONAL NEWS — same structure/classes as Goa sections -->
+<section style="padding:40px 0 0;" id="intlSec">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">🌍 International</h2>
+      <a href="#" onclick="filterCat('International',this);return false;" class="section-link">More World →</a>
+    </div>
+    <div class="news-grid" id="intlGrid">
+      <div class="empty-placeholder" style="grid-column:span 3"><div class="icon">🌍</div>Loading world news…</div>
+    </div>
+  </div>
+</section>
+
+<!-- SPORTS — same structure/classes as Goa sections -->
+<section style="padding:40px 0;" id="sportsSec">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">⚽ Sports</h2>
+      <a href="#" onclick="filterCat('Sports',this);return false;" class="section-link">More Sports →</a>
+    </div>
+    <div class="news-grid" id="sportsGrid">
+      <div class="empty-placeholder" style="grid-column:span 3"><div class="icon">⚽</div>Loading sports news…</div>
+    </div>
+  </div>
+</section>
+
+
+
 <!-- PEOPLE'S NEWS SECTION -->
 <section style="background:linear-gradient(135deg,#0A0A0A 0%,#1a0505 100%);padding:36px 0;">
   <div class="wrap">
@@ -573,6 +669,9 @@ onSnapshot(query(collection(db,'articles'), orderBy('date','desc')), snap => {
   renderMore();
   renderTrend();
   renderOpinion();
+  renderSection('indiaGrid',  'India',        articles);
+  renderSection('intlGrid',   'International', articles);
+  renderSection('sportsGrid', 'Sports',       articles);
 });
 
 // 3. People's news (approved community submissions)
@@ -860,6 +959,39 @@ window.openArt = (id) => {
     </div>`;
   document.getElementById('artModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+};
+
+// ── RENDER INDIA / INTL / SPORTS SECTIONS ────────────────
+function renderSection(sectionId, sectionName, arts) {
+  const el = document.getElementById(sectionId);
+  if (!el) return;
+  const filtered = arts.filter(a => a.section === sectionName && a.status === 'published').slice(0, 6);
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>No articles yet.</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(a => `<article class="ncard" onclick="openArt('${a.id}')">
+    <div class="ncard-img">
+      ${a.image ? `<img src="${a.image}" alt="${a.title}" loading="lazy">` : '<div style="height:100%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:28px;">📷</div>'}
+      <span class="ncat">${a.category}</span>
+    </div>
+    <h3 class="ncard-title">${a.title}</h3>
+    <p class="ncard-exc">${a.excerpt || ''}</p>
+    <div class="ncard-meta" style="justify-content:space-between;">
+      <div style="display:flex;gap:7px;"><span>${timeAgo(a.date)}</span><span>·</span><span>${a.author || 'Staff Reporter'}</span></div>
+      <button onclick="shareArticle('${a.id}',event)" title="Share"
+        style="background:none;border:1px solid var(--g300);color:var(--g500);padding:2px 8px;font-size:11px;cursor:pointer;border-radius:2px;"
+        onmouseover="this.style.background='var(--red)';this.style.color='#fff';this.style.borderColor='var(--red)'"
+        onmouseout="this.style.background='none';this.style.color='var(--g500)';this.style.borderColor='var(--g300)'">
+        ↗ Share
+      </button>
+    </div>
+  </article>`).join('');
+}
+
+window.smoothTo = (id) => {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 window.closeArt = () => { document.getElementById('artModal').classList.remove('open'); document.body.style.overflow=''; };
