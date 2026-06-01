@@ -55,6 +55,12 @@
   .whatsapp-cta { display: flex; align-items: center; gap: 8px; background: #25D366; color: white; padding: 8px 16px; font-family: var(--font-ui); font-size: 12px; font-weight: 600; transition: all 0.2s; border-radius: 3px; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
   .whatsapp-cta:hover { background: #1DAF58; transform: translateY(-1px); }
   .whatsapp-cta svg { width: 16px; height: 16px; }
+  @media (max-width: 768px) {
+    .whatsapp-cta { display: none !important; }
+    .fb-cta { padding: 6px 10px !important; font-size: 11px !important; }
+    .fb-cta span { display: none; }
+    .masthead-right { gap: 6px; }
+  }
   .masthead-weather { font-family: var(--font-ui); font-size: 12px; color: var(--gray-500); text-align: right; display: flex; align-items: center; gap: 6px; cursor: pointer; }
   .weather-temp { font-size: 20px; font-weight: 300; color: var(--gray-700); }
 
@@ -618,7 +624,7 @@
 // Reads ALL data from Firestore in real-time
 // ================================================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, doc, collection, onSnapshot, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, doc, collection, onSnapshot, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const FB = {
   apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
@@ -679,17 +685,15 @@ onSnapshot(
     renderSection('sportsGrid', 'Sports',       articles);
   },
   err => {
-    console.error('Articles listener error:', err.message);
-    // Fallback: try without orderBy
-    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({getDocs}) => {
-      getDocs(collection(db,'articles')).then(snap => {
-        articles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date||0)-(a.date||0));
-        renderHero(); renderLatest(); renderMore(); renderTrend(); renderOpinion();
-        renderSection('indiaGrid','India',articles);
-        renderSection('intlGrid','International',articles);
-        renderSection('sportsGrid','Sports',articles);
-      });
-    });
+    console.error('Articles error:', err.message);
+    // Fallback: fetch without orderBy (no index needed)
+    getDocs(collection(db,'articles')).then(snap => {
+      articles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date||0)-(a.date||0));
+      renderHero(); renderLatest(); renderMore(); renderTrend(); renderOpinion();
+      renderSection('indiaGrid','India',articles);
+      renderSection('intlGrid','International',articles);
+      renderSection('sportsGrid','Sports',articles);
+    }).catch(e => console.error('Fallback also failed:', e.message));
   }
 );
 
@@ -1147,16 +1151,12 @@ document.getElementById('todayDate').textContent = '📅 '+new Date().toLocaleDa
 // Notification
 setTimeout(() => document.getElementById('notif').classList.add('show'), 5000);
 
-// Weather fallback — if siteData hasn't loaded after 3s, fetch directly from Firestore
+// Weather fallback — if siteData hasn't loaded after 3s, fetch directly
 setTimeout(async () => {
-  if (siteData.weather?.key) return; // already loaded
+  if (siteData.weather?.key) return;
   try {
-    const { getDoc, doc: d2 } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-    const snap = await getDoc(d2(db, 'sitedata', 'main'));
-    if (snap.exists() && snap.data().weather?.key) {
-      siteData = { ...siteData, ...snap.data() };
-      loadWeather();
-    }
+    const snap = await getDocs(collection(db, 'sitedata'));
+    snap.forEach(d => { if (d.id === 'main') { siteData = { ...siteData, ...d.data() }; if (siteData.weather?.key) loadWeather(); } });
   } catch(e) { console.log('Weather fallback:', e); }
 }, 3000);
 
