@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Bicholim — Goa's Trusted Local News</title>
+<meta name="description" content="Latest news from Bicholim, Goa — politics, development, crime, sports and local stories.">
+<meta property="og:title" content="Update Bicholim">
+<meta property="og:description" content="Bicholim's most trusted local news portal">
+<meta property="og:url" content="https://www.updatebicholim.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #BB1919; --red-dark: #8B0000; --red-light: #E52020;
+    --black: #0A0A0A; --charcoal: #1A1A1A;
+    --gray-700: #444; --gray-500: #777; --gray-300: #BBB;
+    --gray-100: #F0F0F0; --gray-50: #F7F7F7; --white: #FFFFFF;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Source Serif 4', Georgia, serif;
+    --font-ui: 'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: var(--white); color: var(--black); overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; width: 100%; object-fit: cover; }
+
+  /* TICKER */
+  .ticker-bar { background: var(--red); color: white; font-family: var(--font-ui); font-size: 12px; font-weight: 500; padding: 7px 0; display: flex; align-items: center; overflow: hidden; }
+  .ticker-label { background: var(--red-dark); padding: 0 16px; height: 100%; display: flex; align-items: center; white-space: nowrap; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10px; flex-shrink: 0; }
+  .ticker-track { overflow: hidden; flex: 1; mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%); }
+  .ticker-inner { display: flex; animation: ticker-scroll 40s linear infinite; white-space: nowrap; }
+  .ticker-inner:hover { animation-play-state: paused; }
+  .ticker-item { padding: 0 32px; border-right: 1px solid rgba(255,255,255,0.25); }
+  @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* TOP NAV */
+  .top-nav { background: var(--white); border-bottom: 1px solid var(--gray-100); padding: 6px 0; font-family: var(--font-ui); font-size: 11px; color: var(--gray-500); }
+  .top-nav .container { display: flex; justify-content: space-between; align-items: center; }
+  .lang-btn { padding: 2px 10px; border: 1px solid var(--gray-300); cursor: pointer; font-family: var(--font-ui); font-size: 11px; background: white; transition: all 0.15s; border-radius: 2px; }
+  .lang-btn:hover, .lang-btn.active { background: var(--red); color: white; border-color: var(--red); }
+  .top-nav-links { display: flex; gap: 16px; }
+  .top-nav-links a:hover { color: var(--red); }
+
+  /* MASTHEAD */
+  .masthead { background: var(--white); padding: 20px 0 0; border-bottom: 3px solid var(--red); }
+  .masthead-inner { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 16px; }
+  .logo-kicker { font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 4px; }
+  .logo-name { font-family: var(--font-display); font-size: clamp(36px, 6vw, 64px); font-weight: 900; line-height: 0.9; letter-spacing: -0.02em; color: var(--black); }
+  .logo-name span { color: var(--red); }
+  .logo-tagline { font-family: var(--font-ui); font-size: 11px; color: var(--gray-500); margin-top: 6px; letter-spacing: 0.05em; }
+  .masthead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .whatsapp-cta { display: flex; align-items: center; gap: 8px; background: #25D366; color: white; padding: 8px 16px; font-family: var(--font-ui); font-size: 12px; font-weight: 600; transition: all 0.2s; border-radius: 3px; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
+  .whatsapp-cta:hover { background: #1DAF58; transform: translateY(-1px); }
+  .whatsapp-cta svg { width: 16px; height: 16px; }
+  .masthead-weather { font-family: var(--font-ui); font-size: 12px; color: var(--gray-500); text-align: right; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .weather-temp { font-size: 20px; font-weight: 300; color: var(--gray-700); }
+
+  /* NAV */
+  .primary-nav { background: var(--black); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; }
+  .nav-links { display: flex; list-style: none; }
+  .nav-links a { display: block; padding: 14px 16px; font-family: var(--font-ui); font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.8); transition: all 0.15s; position: relative; }
+  .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--red); transform: scaleX(0); transition: transform 0.2s; }
+  .nav-links a:hover { color: white; } .nav-links a:hover::after { transform: scaleX(1); }
+  .nav-search { display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+  .nav-search input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: white; padding: 6px 12px; font-family: var(--font-ui); font-size: 12px; width: 180px; outline: none; transition: all 0.2s; border-radius: 2px; }
+  .nav-search input::placeholder { color: rgba(255,255,255,0.4); }
+  .nav-search input:focus { background: rgba(255,255,255,0.12); border-color: var(--red); width: 220px; }
+  .search-btn { background: var(--red); border: none; color: white; padding: 6px 12px; cursor: pointer; font-size: 12px; border-radius: 2px; }
+  .dark-toggle { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); cursor: pointer; padding: 5px 10px; font-size: 13px; border-radius: 2px; transition: all 0.2s; }
+  .hamburger { display: none; background: none; border: none; color: white; cursor: pointer; padding: 14px 16px; flex-direction: column; gap: 4px; }
+  .hamburger span { display: block; width: 20px; height: 2px; background: white; }
+
+  /* CONTAINER */
+  .container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+
+  /* SECTION HEADERS */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--black); }
+  .section-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .section-title::before { content: ''; width: 4px; height: 22px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
+  .section-link { font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
+  .section-link:hover { text-decoration: underline; }
+
+  /* HERO */
+  .hero-section { padding: 32px 0 0; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 340px; grid-template-rows: auto auto; gap: 2px; background: var(--gray-100); border: 1px solid var(--gray-100); }
+  .hero-main { grid-row: 1/3; position: relative; overflow: hidden; cursor: pointer; background: var(--charcoal); min-height: 440px; }
+  .hero-main img { height: 100%; min-height: 440px; object-fit: cover; opacity: 0.75; transition: opacity 0.4s, transform 0.6s; }
+  .hero-main:hover img { opacity: 0.6; transform: scale(1.02); }
+  .hero-main-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 28px; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%); }
+  .hero-badge { display: inline-block; background: var(--red); color: white; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 10px; margin-bottom: 10px; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(22px, 3vw, 32px); font-weight: 700; color: white; line-height: 1.25; margin-bottom: 10px; }
+  .hero-meta { font-family: var(--font-ui); font-size: 12px; color: rgba(255,255,255,0.65); }
+  .hero-side { display: flex; flex-direction: column; gap: 2px; }
+  .side-card { flex: 1; position: relative; overflow: hidden; cursor: pointer; background: var(--charcoal); min-height: 190px; }
+  .side-card img { height: 100%; min-height: 190px; object-fit: cover; opacity: 0.65; transition: opacity 0.3s, transform 0.5s; }
+  .side-card:hover img { opacity: 0.5; transform: scale(1.03); }
+  .side-card-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%); }
+  .side-badge { display: inline-block; background: var(--red); color: white; font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 7px; margin-bottom: 6px; }
+  .side-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: white; line-height: 1.3; }
+
+  /* CONTENT */
+  .content-wrapper { display: grid; grid-template-columns: 1fr 300px; gap: 40px; padding: 40px 0; }
+  .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+  .news-card { cursor: pointer; transition: transform 0.2s; }
+  .news-card:hover { transform: translateY(-2px); }
+  .news-card-img { position: relative; overflow: hidden; height: 160px; background: var(--gray-100); margin-bottom: 12px; }
+  .news-card-img img { height: 100%; object-fit: cover; transition: transform 0.4s; }
+  .news-card:hover .news-card-img img { transform: scale(1.04); }
+  .news-card-cat { position: absolute; top: 10px; left: 10px; background: var(--red); color: white; font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; }
+  .news-card-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; line-height: 1.3; margin-bottom: 8px; transition: color 0.15s; }
+  .news-card:hover .news-card-title { color: var(--red); }
+  .news-card-excerpt { font-size: 13px; color: var(--gray-500); line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .news-card-meta { font-family: var(--font-ui); font-size: 11px; color: #999; display: flex; align-items: center; gap: 8px; }
+
+  /* LIST NEWS */
+  .list-news-item { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--gray-100); cursor: pointer; }
+  .list-news-item:hover .list-title { color: var(--red); }
+  .list-news-thumb { width: 100px; height: 70px; flex-shrink: 0; overflow: hidden; background: var(--gray-100); }
+  .list-news-thumb img { height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .list-news-item:hover .list-news-thumb img { transform: scale(1.05); }
+  .list-cat { font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin-bottom: 4px; }
+  .list-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; line-height: 1.35; margin-bottom: 6px; transition: color 0.15s; }
+  .list-meta { font-family: var(--font-ui); font-size: 11px; color: #999; }
+
+  /* LIVE FEED */
+  .live-pulse { display: inline-flex; align-items: center; gap: 6px; background: var(--red); color: white; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 10px; border-radius: 2px; }
+  .live-dot { width: 6px; height: 6px; background: white; border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+  .live-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--gray-100); }
+  .live-time { font-family: var(--font-ui); font-size: 11px; font-weight: 600; color: var(--red); width: 50px; flex-shrink: 0; padding-top: 2px; }
+  .live-text { font-size: 14px; color: var(--gray-700); line-height: 1.5; }
+
+  /* SIDEBAR */
+  .weather-widget { background: var(--black); color: white; padding: 20px; position: relative; overflow: hidden; margin-bottom: 32px; }
+  .weather-widget::before { content: '☁'; position: absolute; right: -10px; top: -20px; font-size: 100px; opacity: 0.06; line-height: 1; }
+  .weather-title { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 12px; }
+  .weather-main { display: flex; align-items: flex-start; justify-content: space-between; }
+  .weather-big-temp { font-family: var(--font-display); font-size: 52px; font-weight: 300; line-height: 1; }
+  .weather-icon { font-size: 36px; }
+  .weather-details { margin-top: 12px; font-family: var(--font-ui); font-size: 12px; color: rgba(255,255,255,0.6); display: flex; gap: 16px; }
+  .weather-desc { font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+  .sidebar-widget { margin-bottom: 32px; }
+  .trending-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-100); cursor: pointer; }
+  .trending-num { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: var(--gray-100); line-height: 1; flex-shrink: 0; width: 36px; }
+  .trending-item:nth-child(1) .trending-num { color: rgba(187,25,25,0.2); }
+  .trending-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; line-height: 1.35; transition: color 0.15s; }
+  .trending-item:hover .trending-title { color: var(--red); }
+  .trending-time { font-family: var(--font-ui); font-size: 11px; color: #999; margin-top: 4px; }
+  .tip-widget { background: var(--gray-50); border: 1px solid var(--gray-100); border-left: 3px solid var(--red); padding: 20px; }
+  .tip-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .tip-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 14px; line-height: 1.5; }
+  .tip-btn { display: block; width: 100%; background: var(--red); color: white; border: none; padding: 10px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-align: center; }
+  .tip-btn:hover { background: var(--red-light); }
+  .classified-item { padding: 12px 0; border-bottom: 1px solid var(--gray-100); }
+  .classified-badge { display: inline-block; font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; margin-bottom: 5px; }
+  .badge-notice { background: #FFF3CD; color: #856404; } .badge-lost { background: #F8D7DA; color: #842029; }
+  .badge-tender { background: #D1E7DD; color: #0A3622; } .badge-event { background: #CCE5FF; color: #004085; }
+  .classified-text { font-size: 13px; color: var(--gray-700); line-height: 1.4; }
+  .event-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--gray-100); }
+  .event-date-box { background: var(--red); color: white; padding: 6px 10px; text-align: center; flex-shrink: 0; min-width: 44px; }
+  .event-day { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1; }
+  .event-month { font-family: var(--font-ui); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
+  .event-name { font-family: var(--font-display); font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .event-place { font-family: var(--font-ui); font-size: 12px; color: var(--gray-500); }
+
+  /* GALLERY */
+  .gallery-section { padding: 0 0 40px; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .gallery-item { position: relative; overflow: hidden; height: 150px; cursor: pointer; background: var(--gray-100); }
+  .gallery-item:first-child { grid-column: span 2; height: 304px; }
+  .gallery-item img { height: 100%; object-fit: cover; transition: transform 0.4s, opacity 0.3s; }
+  .gallery-item:hover img { transform: scale(1.06); opacity: 0.8; }
+  .gallery-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 12px; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%); color: white; font-family: var(--font-ui); font-size: 11px; transform: translateY(100%); transition: transform 0.3s; }
+  .gallery-item:hover .gallery-overlay { transform: translateY(0); }
+
+  /* OPINION */
+  .opinion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 24px 0; }
+  .opinion-card { background: white; padding: 20px; border-top: 3px solid var(--red); cursor: pointer; transition: box-shadow 0.2s; }
+  .opinion-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  .author-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .author-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: var(--font-display); font-size: 16px; font-weight: 700; flex-shrink: 0; }
+  .author-name { font-family: var(--font-ui); font-size: 12px; font-weight: 600; }
+  .author-role { font-family: var(--font-ui); font-size: 11px; color: var(--gray-500); }
+  .opinion-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; line-height: 1.35; font-style: italic; margin-bottom: 8px; }
+  .opinion-excerpt { font-size: 13px; color: var(--gray-500); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* FOOTER */
+  footer { background: var(--charcoal); color: rgba(255,255,255,0.7); padding: 48px 0 0; margin-top: 40px; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .footer-logo { font-family: var(--font-display); font-size: 28px; font-weight: 900; color: white; margin-bottom: 12px; }
+  .footer-logo span { color: var(--red); }
+  .footer-desc { font-size: 13px; line-height: 1.6; margin-bottom: 20px; color: rgba(255,255,255,0.5); }
+  .social-links { display: flex; gap: 10px; }
+  .social-btn { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: all 0.15s; border-radius: 2px; }
+  .social-btn:hover { background: var(--red); border-color: var(--red); }
+  .footer-heading { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .footer-links { list-style: none; }
+  .footer-links li { padding: 5px 0; font-size: 13px; cursor: pointer; transition: color 0.15s; }
+  .footer-links li:hover { color: white; }
+  .footer-bottom { padding: 16px 0; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-ui); font-size: 11px; color: rgba(255,255,255,0.3); }
+
+  /* MODALS */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: white; width: 480px; max-width: 90vw; padding: 32px; position: relative; transform: scale(0.95); transition: transform 0.3s; }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-500); }
+  .modal h2 { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label { display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gray-700); margin-bottom: 5px; }
+  .modal-field input, .modal-field textarea, .modal-field select { width: 100%; border: 1px solid var(--gray-300); padding: 9px 12px; font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s; resize: vertical; border-radius: 0; background: white; }
+  .modal-field input:focus, .modal-field textarea:focus, .modal-field select:focus { border-color: var(--red); }
+  .modal-submit { width: 100%; background: var(--red); color: white; border: none; padding: 12px; font-family: var(--font-ui); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; margin-top: 6px; }
+  .modal-submit:hover { background: var(--red-light); }
+
+  /* NOTIFICATION */
+  .notif-bar { position: fixed; bottom: 20px; right: 20px; background: var(--black); color: white; padding: 16px 20px; max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); z-index: 999; display: flex; align-items: flex-start; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); border-left: 3px solid var(--red); }
+  .notif-bar.show { transform: translateY(0); opacity: 1; }
+  .notif-text h4 { font-family: var(--font-ui); font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .notif-text p { font-family: var(--font-ui); font-size: 11px; color: rgba(255,255,255,0.6); }
+  .notif-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .notif-allow { background: var(--red); color: white; border: none; padding: 5px 12px; font-family: var(--font-ui); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .notif-dismiss { background: none; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); padding: 5px 12px; font-family: var(--font-ui); font-size: 11px; cursor: pointer; }
+  .notif-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 16px; }
+
+  /* MOBILE */
+  .mobile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .mobile-overlay.open { opacity: 1; pointer-events: all; }
+  .mobile-nav { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background: var(--black); z-index: 200; transition: left 0.3s ease; overflow-y: auto; padding: 20px 0; }
+  .mobile-nav.open { left: 0; }
+  .mobile-nav-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; }
+  .mobile-logo { font-family: var(--font-display); font-size: 22px; font-weight: 900; color: white; }
+  .mobile-logo span { color: var(--red); }
+  .mobile-nav-links { list-style: none; }
+  .mobile-nav-links a { display: block; padding: 12px 20px; font-family: var(--font-ui); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.75); border-bottom: 1px solid rgba(255,255,255,0.04); transition: all 0.15s; }
+  .mobile-nav-links a:hover { background: rgba(187,25,25,0.15); color: white; }
+
+  /* EMPTY STATE */
+  .empty-placeholder { background: var(--gray-50); border: 2px dashed var(--gray-300); padding: 40px 20px; text-align: center; color: var(--gray-500); font-family: var(--font-ui); font-size: 13px; }
+  .empty-placeholder .icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* DARK MODE */
+  [data-dark="true"] {
+    --black: #F0F0F0; --charcoal: #111; --gray-700: #AAA; --gray-500: #888;
+    --gray-300: #444; --gray-100: #1E1E1E; --gray-50: #181818; --white: #111;
+  }
+
+  @media (max-width: 1024px) { .content-wrapper { grid-template-columns: 1fr; } .opinion-grid { grid-template-columns: 1fr 1fr; } .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 768px) { .hero-grid { grid-template-columns: 1fr; } .news-grid { grid-template-columns: 1fr 1fr; } .gallery-grid { grid-template-columns: 1fr 1fr; } .gallery-item:first-child { height: 200px; } .gallery-item { height: 120px; } .opinion-grid { grid-template-columns: 1fr; } .footer-grid { grid-template-columns: 1fr; gap: 24px; } .nav-links { display: none; } .nav-search { display: none; } .hamburger { display: flex; } .top-nav-links { display: none; } }
+  @media (max-width: 480px) { .news-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="ticker-bar">
+  <div class="ticker-label">🔴 Breaking</div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner">
+      <span class="ticker-item">Loading latest news…</span>
+    </div>
+  </div>
+</div>
+
+<nav class="top-nav">
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="todayDate">📅 Loading…</span>
+      <span>📍 Bicholim, Goa</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;">Language:</span>
+      <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+      <button class="lang-btn" onclick="setLang('ko',this)">Konkani</button>
+      <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+    </div>
+    <div class="top-nav-links">
+      <a href="#">About</a><a href="#">Advertise</a><a href="#">Contact</a><a href="#">E-Paper</a>
+    </div>
+  </div>
+</nav>
+
+<header class="masthead">
+  <div class="container">
+    <div class="masthead-inner">
+      <div>
+        <div class="logo-kicker">Goa's Trusted Local News</div>
+        <div class="logo-name">UPDATE <span>BICHOLIM</span></div>
+        <div class="logo-tagline">www.updatebicholim.com · Est. 2025</div>
+      </div>
+      <div class="masthead-right">
+        <a href="#" id="waLink" class="whatsapp-cta">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <span>Join WhatsApp Channel</span>
+        </a>
+        <div class="masthead-weather" onclick="document.querySelector('.weather-widget').scrollIntoView({behavior:'smooth'})">
+          <span class="weather-temp" id="headerTemp">--°</span>
+          <span id="headerWeatherDesc">Loading weather…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="primary-nav">
+  <div class="container nav-inner">
+    <ul class="nav-links">
+      <li><a href="#" class="active">Home</a></li>
+      <li><a href="#" onclick="filterCat('Politics')">Politics</a></li>
+      <li><a href="#" onclick="filterCat('Crime')">Crime</a></li>
+      <li><a href="#" onclick="filterCat('Development')">Development</a></li>
+      <li><a href="#" onclick="filterCat('Business')">Business</a></li>
+      <li><a href="#" onclick="filterCat('Sports')">Sports</a></li>
+      <li><a href="#" onclick="filterCat('Education')">Education</a></li>
+      <li><a href="#" onclick="filterCat('Entertainment')">Entertainment</a></li>
+      <li><a href="#" onclick="filterCat('Opinion')">Opinion</a></li>
+      <li><a href="#" onclick="showPage('classifieds')">Classifieds</a></li>
+    </ul>
+    <div class="nav-search">
+      <input type="text" placeholder="Search news…" id="searchInput" onkeypress="if(event.key==='Enter')doSearch(this.value)">
+      <button class="search-btn" onclick="doSearch(document.getElementById('searchInput').value)">🔍</button>
+      <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+    </div>
+    <button class="hamburger" id="hamburgerBtn"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileNav()"></div>
+<nav class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-header"><div class="mobile-logo">UPDATE <span>BICHOLIM</span></div></div>
+  <ul class="mobile-nav-links">
+    <li><a href="#">🏠 Home</a></li><li><a href="#">🏛 Politics</a></li><li><a href="#">🚨 Crime</a></li>
+    <li><a href="#">🏗 Development</a></li><li><a href="#">💼 Business</a></li><li><a href="#">⚽ Sports</a></li>
+    <li><a href="#">📚 Education</a></li><li><a href="#">🎭 Entertainment</a></li>
+    <li><a href="#">✍️ Opinion</a></li><li><a href="#">📋 Classifieds</a></li>
+  </ul>
+</nav>
+
+<main>
+  <section class="hero-section">
+    <div class="container">
+      <div id="heroSection">
+        <div class="empty-placeholder"><div class="icon">📰</div>Loading top stories…</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="content-wrapper">
+      <div>
+        <section style="margin-bottom:40px;">
+          <div class="section-header"><h2 class="section-title">Latest News</h2><a href="#" class="section-link">All Stories →</a></div>
+          <div class="news-grid" id="latestGrid">
+            <div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>Loading articles…</div>
+          </div>
+        </section>
+
+        <section style="margin-bottom:40px;">
+          <div class="section-header">
+            <h2 class="section-title">Bicholim Live <span class="live-pulse" style="font-size:10px;"><span class="live-dot"></span> Live</span></h2>
+            <a href="#" class="section-link">Full Feed →</a>
+          </div>
+          <div id="liveFeedSection">
+            <div class="empty-placeholder"><div class="icon">⚡</div>No live updates right now.</div>
+          </div>
+        </section>
+
+        <section style="margin-bottom:40px;">
+          <div class="section-header"><h2 class="section-title">More News</h2><a href="#" class="section-link">More →</a></div>
+          <div id="moreNewsList">
+            <div class="empty-placeholder"><div class="icon">📰</div>No more articles yet.</div>
+          </div>
+        </section>
+      </div>
+
+      <aside>
+        <div class="weather-widget" style="margin-bottom:32px;">
+          <div class="weather-title">📍 Bicholim Weather</div>
+          <div class="weather-main">
+            <div>
+              <div class="weather-big-temp" id="wTemp">--°C</div>
+              <div class="weather-desc" id="wDesc">Loading…</div>
+            </div>
+            <div class="weather-icon" id="wIcon">⏳</div>
+          </div>
+          <div class="weather-details">
+            <span id="wHum">💧 --%</span>
+            <span id="wWind">💨 -- km/h</span>
+          </div>
+          <div style="margin-top:12px;font-family:var(--font-ui);font-size:11px;color:rgba(255,255,255,0.4);border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;" id="wForecast">Loading forecast…</div>
+        </div>
+
+        <div class="sidebar-widget">
+          <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Trending</h3></div>
+          <div id="trendingList"><div class="empty-placeholder"><div class="icon">📈</div>No trending stories yet.</div></div>
+        </div>
+
+        <div class="sidebar-widget">
+          <div class="tip-widget">
+            <h3 class="tip-title">📩 Send Us a Tip</h3>
+            <p class="tip-desc">Witnessed something newsworthy? Your identity stays confidential.</p>
+            <button class="tip-btn" onclick="document.getElementById('tipModal').classList.add('open');document.body.style.overflow='hidden'">Submit a News Tip</button>
+          </div>
+        </div>
+
+        <div class="sidebar-widget">
+          <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Notices & Classifieds</h3></div>
+          <div id="classifiedsSection"><div class="empty-placeholder"><div class="icon">📋</div>No notices yet.</div></div>
+        </div>
+
+        <div class="sidebar-widget">
+          <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Upcoming Events</h3></div>
+          <div id="eventsSection"><div class="empty-placeholder"><div class="icon">📅</div>No events listed yet.</div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <section class="gallery-section">
+    <div class="container">
+      <div class="section-header"><h2 class="section-title">Photo Gallery</h2><a href="#" class="section-link">View All →</a></div>
+      <div id="gallerySection"><div class="empty-placeholder"><div class="icon">🖼️</div>No gallery photos yet.</div></div>
+    </div>
+  </section>
+
+  <section style="background:var(--gray-50);padding:40px 0;">
+    <div class="container">
+      <div class="section-header"><h2 class="section-title">Opinion & Analysis</h2><a href="#" class="section-link">All Opinions →</a></div>
+      <div id="opinionSection">
+        <div class="empty-placeholder"><div class="icon">✍️</div>No opinion pieces yet.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<!-- PEOPLE'S NEWS SECTION -->
+<section style="background:linear-gradient(135deg,#0A0A0A 0%,#1a0505 100%);padding:36px 0;">
+  <div class="wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid rgba(255,255,255,.12);">
+      <h2 style="font-family:var(--fd);font-size:20px;font-weight:700;color:#fff;display:flex;align-items:center;gap:9px;">
+        <span style="width:4px;height:20px;background:var(--red);border-radius:2px;display:inline-block;"></span>
+        📢 People's News
+        <span style="font-family:var(--fu);font-size:11px;font-weight:400;color:rgba(255,255,255,.35);">Reported by Bicholim citizens</span>
+      </h2>
+      <a href="people/index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;padding:8px 16px;font-family:var(--fu);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;">🗞️ Submit Your Story</a>
+    </div>
+    <div id="peopleNewsGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+      <p style="color:rgba(255,255,255,.4);font-size:13px;grid-column:1/-1;">Loading community stories…</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">UPDATE <span>BICHOLIM</span></div>
+        <p class="footer-desc">Bicholim's most trusted digital news portal — covering politics, development, crime, sports, and community stories that matter to you.</p>
+        <div class="social-links">
+          <div class="social-btn">📘</div><div class="social-btn">💬</div>
+          <div class="social-btn">📷</div><div class="social-btn">▶️</div><div class="social-btn">✕</div>
+        </div>
+      </div>
+      <div><div class="footer-heading">Quick Links</div><ul class="footer-links"><li>Home</li><li>Politics</li><li>Crime</li><li>Development</li><li>Sports</li><li>Education</li><li>Entertainment</li></ul></div>
+      <div><div class="footer-heading">Services</div><ul class="footer-links"><li>E-Paper</li><li>Photo Gallery</li><li>Classifieds</li><li>Events Calendar</li><li>Advertise With Us</li><li>Send a Tip</li></ul></div>
+      <div><div class="footer-heading">Contact</div><ul class="footer-links" id="footerContact"><li>📧 news@updatebicholim.com</li><li>📍 Bicholim, North Goa – 403504</li><li style="margin-top:10px;">About Us</li><li>Privacy Policy</li><li>Terms of Service</li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2025 Update Bicholim. All rights reserved.</span><span>updatebicholim.com · Made with ❤️ in Goa</span></div>
+  </div>
+</footer>
+
+<div class="notif-bar" id="notifBar">
+  <button class="notif-close" onclick="document.getElementById('notifBar').classList.remove('show')">×</button>
+  <div style="font-size:20px;">🔔</div>
+  <div class="notif-text">
+    <h4>Stay Updated — Enable Notifications</h4>
+    <p>Get breaking Bicholim news instantly.</p>
+    <div class="notif-actions">
+      <button class="notif-allow" onclick="document.getElementById('notifBar').classList.remove('show')">Allow</button>
+      <button class="notif-dismiss" onclick="document.getElementById('notifBar').classList.remove('show')">Not Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tipModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('tipModal').classList.remove('open');document.body.style.overflow=''">×</button>
+    <h2>📩 Send Us a Tip</h2>
+    <p>Share newsworthy information — your identity stays confidential.</p>
+    <div class="modal-field"><label>Category</label><select><option>Politics</option><option>Crime</option><option>Development</option><option>Civic Issue</option><option>Other</option></select></div>
+    <div class="modal-field"><label>Your Name (Optional)</label><input type="text" placeholder="Anonymous if left blank"></div>
+    <div class="modal-field"><label>Contact (Optional)</label><input type="text" placeholder="Phone or email"></div>
+    <div class="modal-field"><label>Your Tip *</label><textarea rows="4" placeholder="Describe what you saw, heard, or know…"></textarea></div>
+    <button class="modal-submit" onclick="alert('Thank you! Tip submitted.');document.getElementById('tipModal').classList.remove('open');document.body.style.overflow=''">Submit Tip Securely →</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ub_admin_data';
+const WEATHER_ICONS = { Clear:'☀️', Clouds:'⛅', Rain:'🌧️', Drizzle:'🌦️', Thunderstorm:'⛈️', Snow:'❄️', Mist:'🌫️', Haze:'🌫️', Fog:'🌫️' };
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
+  if (m < 1) return 'Just now';
+  if (m < 60) return m + ' min ago';
+  if (h < 24) return h + ' hr ago';
+  return d + ' day' + (d>1?'s':'') + ' ago';
+}
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+}
+
+function renderTicker(data) {
+  const items = data.ticker || [];
+  if (!items.length) return;
+  const doubled = [...items, ...items];
+  document.getElementById('tickerInner').innerHTML = doubled.map(t => `<span class="ticker-item">${t}</span>`).join('');
+}
+
+function renderHero(articles) {
+  const heroArts = articles.filter(a => a.hero && a.status === 'published');
+  const published = articles.filter(a => a.status === 'published');
+  const main = heroArts[0] || published[0];
+  const sides = published.slice(1, 3);
+  if (!main) { document.getElementById('heroSection').innerHTML = '<div class="empty-placeholder"><div class="icon">📰</div>No featured stories yet. Add articles from the admin portal.</div>'; return; }
+  const sideHTML = sides.map(s => `
+    <article class="side-card" onclick="openArticle('${s.id}')">
+      ${s.image ? `<img src="${s.image}" alt="${s.title}" loading="lazy">` : `<div style="background:var(--charcoal);height:100%;min-height:190px;"></div>`}
+      <div class="side-card-content">
+        <span class="side-badge">${s.category}</span>
+        <h2 class="side-title">${s.title}</h2>
+      </div>
+    </article>
+  `).join('');
+  document.getElementById('heroSection').innerHTML = `
+    <div class="hero-grid">
+      <article class="hero-main" onclick="openArticle('${main.id}')">
+        ${main.image ? `<img src="${main.image}" alt="${main.title}" loading="lazy">` : `<div style="background:var(--charcoal);height:100%;min-height:440px;display:flex;align-items:center;justify-content:center;font-size:48px;">📰</div>`}
+        <div class="hero-main-content">
+          <span class="hero-badge">${main.breaking ? '🔴 Breaking News' : main.category}</span>
+          <h1 class="hero-title">${main.title}</h1>
+          <div class="hero-meta">By ${main.author || 'Staff Reporter'} &nbsp;·&nbsp; ${timeAgo(main.date)} &nbsp;·&nbsp; ${main.category}</div>
+        </div>
+      </article>
+      <div class="hero-side">${sideHTML || '<div style="background:var(--charcoal);flex:1;min-height:190px;"></div><div style="background:#111;flex:1;min-height:190px;"></div>'}</div>
+    </div>`;
+}
+
+function renderLatestGrid(articles) {
+  const latest = articles.filter(a => a.status === 'published').slice(0, 6);
+  const grid = document.getElementById('latestGrid');
+  if (!latest.length) { grid.innerHTML = '<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>No published articles yet.</div>'; return; }
+  grid.innerHTML = latest.map(a => `
+    <article class="news-card" onclick="openArticle('${a.id}')">
+      <div class="news-card-img">
+        ${a.image ? `<img src="${a.image}" alt="${a.title}" loading="lazy">` : `<div style="height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:32px;">📷</div>`}
+        <span class="news-card-cat">${a.category}</span>
+      </div>
+      <h3 class="news-card-title">${a.title}</h3>
+      <p class="news-card-excerpt">${a.excerpt || ''}</p>
+      <div class="news-card-meta"><span>${timeAgo(a.date)}</span><span>·</span><span>${a.author || 'Staff Reporter'}</span></div>
+    </article>
+  `).join('');
+}
+
+function renderMoreNews(articles) {
+  const more = articles.filter(a => a.status === 'published').slice(6, 12);
+  const el = document.getElementById('moreNewsList');
+  if (!more.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📰</div>No more articles.</div>'; return; }
+  el.innerHTML = more.map(a => `
+    <div class="list-news-item" onclick="openArticle('${a.id}')">
+      <div class="list-news-thumb">${a.image ? `<img src="${a.image}" alt="${a.title}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;">📷</div>'}</div>
+      <div><div class="list-cat">${a.category}</div><h3 class="list-title">${a.title}</h3><div class="list-meta">${timeAgo(a.date)} · ${a.author || 'Staff Reporter'}</div></div>
+    </div>
+  `).join('');
+}
+
+function renderLiveFeed(data) {
+  const feed = data.liveFeed || [];
+  const el = document.getElementById('liveFeedSection');
+  if (!feed.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">⚡</div>No live updates right now.</div>'; return; }
+  el.innerHTML = feed.map(item => `
+    <div class="live-item">
+      <div class="live-time">${item.time}</div>
+      <div class="live-text">${item.text}</div>
+    </div>
+  `).join('');
+}
+
+function renderTrending(articles) {
+  const top = articles.filter(a => a.status === 'published').slice(0, 5);
+  const el = document.getElementById('trendingList');
+  if (!top.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📈</div>No trending stories yet.</div>'; return; }
+  el.innerHTML = top.map((a, i) => `
+    <div class="trending-item" onclick="openArticle('${a.id}')">
+      <div class="trending-num">0${i+1}</div>
+      <div><div class="trending-title">${a.title}</div><div class="trending-time">${timeAgo(a.date)}</div></div>
+    </div>
+  `).join('');
+}
+
+function renderClassifieds(data) {
+  const items = data.classifieds || [];
+  const el = document.getElementById('classifiedsSection');
+  if (!items.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📋</div>No notices yet.</div>'; return; }
+  const badgeMap = { notice:'badge-notice', tender:'badge-tender', lost:'badge-lost', event:'badge-event' };
+  const labelMap = { notice:'Govt Notice', tender:'Tender', lost:'Lost & Found', event:'Event', job:'Job' };
+  el.innerHTML = items.map(c => `
+    <div class="classified-item">
+      <span class="classified-badge ${badgeMap[c.type]||'badge-notice'}">${labelMap[c.type]||c.type}</span>
+      <p class="classified-text">${c.text}</p>
+    </div>
+  `).join('');
+}
+
+function renderEvents(data) {
+  const events = (data.events || []).filter(e => new Date(e.date+'T00:00:00') >= new Date(new Date().setHours(0,0,0,0)));
+  const el = document.getElementById('eventsSection');
+  if (!events.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">📅</div>No upcoming events.</div>'; return; }
+  el.innerHTML = events.sort((a,b) => new Date(a.date)-new Date(b.date)).slice(0,5).map(ev => {
+    const d = new Date(ev.date+'T00:00:00');
+    return `<div class="event-item">
+      <div class="event-date-box"><div class="event-day">${d.getDate()}</div><div class="event-month">${d.toLocaleString('default',{month:'short'})}</div></div>
+      <div><div class="event-name">${ev.name}</div><div class="event-place">📍 ${ev.place}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderGallery(data) {
+  const photos = data.gallery || [];
+  const el = document.getElementById('gallerySection');
+  if (!photos.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">🖼️</div>No gallery photos yet.</div>'; return; }
+  el.innerHTML = `<div class="gallery-grid">${photos.slice(0,7).map(g => `
+    <div class="gallery-item">
+      <img src="${g.src}" alt="${g.caption||''}" loading="lazy">
+      <div class="gallery-overlay">${g.caption||''}</div>
+    </div>`).join('')}</div>`;
+}
+
+function renderOpinion(articles) {
+  const opinions = articles.filter(a => a.category === 'Opinion' && a.status === 'published').slice(0,3);
+  const el = document.getElementById('opinionSection');
+  if (!opinions.length) { el.innerHTML = '<div class="empty-placeholder"><div class="icon">✍️</div>No opinion pieces yet.</div>'; return; }
+  const colors = ['#BB1919','#1A5C9A','#2D7A2D'];
+  el.innerHTML = `<div class="opinion-grid">${opinions.map((a,i) => `
+    <article class="opinion-card" onclick="openArticle('${a.id}')">
+      <div class="author-row">
+        <div class="author-avatar" style="background:${colors[i%colors.length]}">${(a.author||'?')[0].toUpperCase()}</div>
+        <div><div class="author-name">${a.author||'Staff Reporter'}</div><div class="author-role">Contributor</div></div>
+      </div>
+      <h3 class="opinion-title">"${a.title}"</h3>
+      <p class="opinion-excerpt">${a.excerpt||''}</p>
+    </article>`).join('')}</div>`;
+}
+
+// Article viewer modal
+function openArticle(id) {
+  const data = getData();
+  const art = (data.articles||[]).find(a => a.id === id);
+  if (!art) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.style.alignItems = 'flex-start';
+  overlay.style.overflowY = 'auto';
+  overlay.style.paddingTop = '40px';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:680px;width:90%;padding:0;overflow:hidden;">
+      <button class="modal-close" style="top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.5);color:white;width:30px;height:30px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;" onclick="this.closest('.modal-overlay').remove();document.body.style.overflow=''">×</button>
+      ${art.image ? `<img src="${art.image}" style="width:100%;height:280px;object-fit:cover;" alt="${art.title}">` : ''}
+      <div style="padding:28px;">
+        <div style="font-family:var(--font-ui);font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">${art.category}</div>
+        <h2 style="font-family:var(--font-display);font-size:clamp(20px,3vw,28px);font-weight:700;line-height:1.25;margin-bottom:12px;">${art.title}</h2>
+        <div style="font-family:var(--font-ui);font-size:12px;color:var(--gray-500);margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--gray-100);">
+          By <strong>${art.author||'Staff Reporter'}</strong> &nbsp;·&nbsp; ${new Date(art.date).toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+          ${art.location ? ` &nbsp;·&nbsp; 📍 ${art.location}` : ''}
+        </div>
+        <div style="font-size:15px;line-height:1.75;color:var(--gray-700);">${(art.body||art.excerpt||'No content.').replace(/\n\n/g,'</p><p style="margin-bottom:14px;">').replace(/\n/g,'<br>')}</div>
+        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--gray-100);display:flex;gap:10px;">
+          <a href="https://wa.me/?text=${encodeURIComponent(art.title+' - updatebicholim.com')}" target="_blank" style="display:flex;align-items:center;gap:6px;background:#25D366;color:white;padding:8px 14px;font-family:var(--font-ui);font-size:12px;font-weight:600;border-radius:3px;">💬 Share on WhatsApp</a>
+        </div>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+// Weather
+async function loadWeather() {
+  const data = getData();
+  const key  = data.weather?.key;
+  const city = data.weather?.city || 'Bicholim,IN';
+  if (!key) {
+    const msg = '⛅ Add API key in admin';
+    document.getElementById('wDesc').textContent = 'Set up weather in Admin → Weather';
+    document.getElementById('headerWeatherDesc').textContent = '⛅ Bicholim';
+    return;
+  }
+  try {
+    const [curr, fore] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`).then(r=>r.json()),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${key}&units=metric&cnt=9`).then(r=>r.json())
+    ]);
+    if (curr.cod !== 200) return;
+    const icon = WEATHER_ICONS[curr.weather[0].main] || '🌡️';
+    const temp = Math.round(curr.main.temp);
+    const desc = curr.weather[0].description.charAt(0).toUpperCase() + curr.weather[0].description.slice(1);
+    document.getElementById('wTemp').textContent   = temp + '°C';
+    document.getElementById('wDesc').textContent   = desc;
+    document.getElementById('wIcon').textContent   = icon;
+    document.getElementById('wHum').textContent    = `💧 Humidity ${curr.main.humidity}%`;
+    document.getElementById('wWind').textContent   = `💨 Wind ${Math.round(curr.wind.speed * 3.6)} km/h`;
+    document.getElementById('headerTemp').textContent = temp + '°';
+    document.getElementById('headerWeatherDesc').textContent = `${icon} ${desc} · Bicholim`;
+    // Forecast
+    if (fore.list) {
+      const days = {};
+      fore.list.forEach(f => {
+        const d = new Date(f.dt*1000).toLocaleDateString('en-IN',{weekday:'short'});
+        if (!days[d]) days[d] = { icon: WEATHER_ICONS[f.weather[0].main]||'🌡️', temp: Math.round(f.main.temp) };
+      });
+      document.getElementById('wForecast').innerHTML = Object.entries(days).slice(0,3).map(([d,v]) => `<span>${d} ${v.icon} ${v.temp}°</span>`).join(' &nbsp;|&nbsp; ');
+    }
+  } catch(e) { console.log('Weather load failed', e); }
+}
+
+// Render everything
+function renderAll() {
+  const data = getData();
+  const articles = data.articles || [];
+  document.getElementById('todayDate').textContent = '📅 ' + new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if (data.site?.wa) document.getElementById('waLink').href = data.site.wa;
+  renderTicker(data);
+  renderHero(articles);
+  renderLatestGrid(articles);
+  renderMoreNews(articles);
+  renderLiveFeed(data);
+  renderTrending(articles);
+  renderClassifieds(data);
+  renderEvents(data);
+  renderGallery(data);
+  renderOpinion(articles);
+}
+
+function filterCat(cat) {
+  const data = getData();
+  const filtered = (data.articles||[]).filter(a => a.category === cat && a.status === 'published');
+  const grid = document.getElementById('latestGrid');
+  if (!filtered.length) { grid.innerHTML = `<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">📰</div>No articles in ${cat} yet.</div>`; return; }
+  grid.innerHTML = filtered.slice(0,6).map(a => `
+    <article class="news-card" onclick="openArticle('${a.id}')">
+      <div class="news-card-img">${a.image ? `<img src="${a.image}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);"></div>'}<span class="news-card-cat">${a.category}</span></div>
+      <h3 class="news-card-title">${a.title}</h3>
+      <p class="news-card-excerpt">${a.excerpt||''}</p>
+      <div class="news-card-meta"><span>${timeAgo(a.date)}</span></div>
+    </article>`).join('');
+  window.scrollTo({top: 500, behavior: 'smooth'});
+}
+
+function doSearch(query) {
+  if (!query) return;
+  const data = getData();
+  const q = query.toLowerCase();
+  const results = (data.articles||[]).filter(a => a.status==='published' && (a.title.toLowerCase().includes(q) || (a.excerpt||'').toLowerCase().includes(q)));
+  const grid = document.getElementById('latestGrid');
+  if (!results.length) { grid.innerHTML = `<div class="empty-placeholder" style="grid-column:span 3"><div class="icon">🔍</div>No results for "${query}".</div>`; return; }
+  grid.innerHTML = results.slice(0,6).map(a => `
+    <article class="news-card" onclick="openArticle('${a.id}')">
+      <div class="news-card-img">${a.image ? `<img src="${a.image}" loading="lazy">` : '<div style="height:100%;background:var(--gray-100);"></div>'}<span class="news-card-cat">${a.category}</span></div>
+      <h3 class="news-card-title">${a.title}</h3>
+      <p class="news-card-excerpt">${a.excerpt||''}</p>
+      <div class="news-card-meta"><span>${timeAgo(a.date)}</span></div>
+    </article>`).join('');
+  window.scrollTo({top: 500, behavior: 'smooth'});
+}
+
+function toggleDark() {
+  const isDark = document.body.getAttribute('data-dark') === 'true';
+  document.body.setAttribute('data-dark', !isDark);
+  document.querySelector('.dark-toggle').textContent = isDark ? '🌙' : '☀️';
+}
+function setLang(lang, btn) {
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', () => {
+  document.getElementById('mobileNav').classList.add('open');
+  document.getElementById('mobileOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+});
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Scroll fade-in
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
+  });
+}, {threshold:0.1});
+
+// Init
+renderAll();
+loadWeather();
+setTimeout(() => { document.getElementById('notifBar').classList.add('show'); }, 4000);
+
+// Live reload — check for updates every 30 seconds
+setInterval(renderAll, 30000);
+
+// Fade-in on scroll
+setTimeout(() => {
+  document.querySelectorAll('.news-card, .list-news-item, .opinion-card, .event-item, .trending-item').forEach(el => {
+    el.style.opacity = '0'; el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+}, 100);
+</script>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import{getFirestore,collection,query,where,orderBy,getDocs,limit}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+try{
+  const app=initializeApp(cfg);
+  const db=getFirestore(app);
+  getDocs(query(collection(db,"submissions"),where("status","==","approved"),orderBy("submittedAt","desc"),limit(8))).then(snap=>{
+    const el=document.getElementById("peopleNewsGrid");
+    if(!el)return;
+    if(snap.empty){el.innerHTML="<p style=\"color:rgba(255,255,255,.4);font-size:13px;grid-column:1/-1;\">No community stories yet. <a href=\"people/index.html\" style=\"color:var(--red)\">Be the first!</a></p>";return;}
+    el.innerHTML=snap.docs.map(d=>{
+      const s=d.data();
+      const img=s.media&&s.media.find(m=>m.type==="image");
+      return \`<div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);overflow:hidden;cursor:pointer;" onclick="window._pnArt=\${JSON.stringify(JSON.stringify(s))};document.getElementById(\'pnModal\').style.display=\'flex\'">
+        <div style="height:120px;overflow:hidden;background:rgba(255,255,255,.05);">\${img?'<img src="'+img.url+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy">':'<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.2);">📷</div>'}</div>
+        <div style="padding:11px;">
+          <div style="font-family:var(--fu);font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:4px;">\${s.category}</div>
+          <div style="font-family:var(--fd);font-size:13px;font-weight:700;line-height:1.3;color:#fff;margin-bottom:5px;">\${s.title}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);">📍 \${s.location}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);">
+            <img src="\${s.selfieURL||''}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\'">
+            <span style="font-family:var(--fu);font-size:10px;font-weight:600;color:rgba(255,255,255,.65);">📝 \${s.reporterName}</span>
+          </div>
+        </div>
+      </div>\`;
+    }).join("");
+  }).catch(e=>console.log("PN:",e));
+}catch(e){console.log("FB:",e);}
+</script>
+
+<!-- People's News Article Modal -->
+<div id="pnModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative;" id="pnModalBox">
+    <button onclick="document.getElementById('pnModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;z-index:1;">×</button>
+  </div>
+</div>
+<script>
+document.getElementById('pnModal').addEventListener('click',function(e){
+  if(e.target!==this)return;
+  this.style.display='none';
+});
+// Populate modal when opened
+const pnObs=new MutationObserver(()=>{
+  const m=document.getElementById('pnModal');
+  if(m.style.display==='flex'&&window._pnArt){
+    const s=JSON.parse(window._pnArt);
+    const img=s.media&&s.media.find(m=>m.type==='image');
+    document.getElementById('pnModalBox').innerHTML=\`
+      <button onclick="document.getElementById('pnModal').style.display='none'" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);color:#fff;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;z-index:1;">×</button>
+      \${img?'<img src="'+img.url+'" style="width:100%;height:240px;object-fit:cover;">':''}
+      <div style="padding:22px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px;background:#f8f8f8;border-radius:2px;">
+          <img src="\${s.selfieURL||''}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+          <div><div style="font-weight:700;font-size:13px;">📝 \${s.reporterName}</div><div style="font-size:11px;color:#777;">Community Reporter · People's Portal</div></div>
+        </div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#BB1919;margin-bottom:7px;">\${s.category}</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:10px;line-height:1.25;">\${s.title}</h2>
+        <div style="font-size:12px;color:#777;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #eee;">📅 \${s.date}\${s.time?' at '+s.time:''} · 📍 \${s.location}</div>
+        <div style="font-size:14px;line-height:1.75;color:#444;">\${(s.body||'').replace(/\n/g,'<br>')}</div>
+      </div>\`;
+    window._pnArt=null;
+  }
+});
+pnObs.observe(document.getElementById('pnModal'),{attributes:true,attributeFilter:['style']});
+</script>
+
+</body>
+</html>
