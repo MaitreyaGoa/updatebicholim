@@ -311,8 +311,8 @@
           </a>
         </div>
         <div class="masthead-weather" onclick="document.querySelector('.weather-widget').scrollIntoView({behavior:'smooth'})" style="margin-top:6px;">
-          <span class="weather-temp" id="headerTemp">--°</span>
-          <span id="headerWeatherDesc">Loading weather…</span>
+          <span class="weather-temp" id="headerTemp"></span>
+          <span id="headerWeatherDesc">⛅ Bicholim</span>
         </div>
       </div>
     </div>
@@ -395,16 +395,16 @@
           <div class="weather-title">📍 Bicholim Weather</div>
           <div class="weather-main">
             <div>
-              <div class="weather-big-temp" id="wTemp">--°C</div>
-              <div class="weather-desc" id="wDesc">Loading…</div>
+              <div class="weather-big-temp" id="wTemp"></div>
+              <div class="weather-desc" id="wDesc"></div>
             </div>
-            <div class="weather-icon" id="wIcon">⏳</div>
+            <div class="weather-icon" id="wIcon"></div>
           </div>
           <div class="weather-details">
-            <span id="wHum">💧 --%</span>
-            <span id="wWind">💨 -- km/h</span>
+            <span id="wHum"></span>
+            <span id="wWind"></span>
           </div>
-          <div style="margin-top:12px;font-family:var(--font-ui);font-size:11px;color:rgba(255,255,255,0.4);border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;" id="wForecast">Loading forecast…</div>
+          <div style="margin-top:12px;font-family:var(--font-ui);font-size:11px;color:rgba(255,255,255,0.4);border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;" id="wFore"></div>
         </div>
 
         <div class="sidebar-widget">
@@ -725,31 +725,70 @@ async function loadWeather() {
     document.getElementById('hWxDesc').textContent = '⛅ Bicholim';
     return;
   }
+
+  // ── CACHE: show cached weather instantly, refresh in background ──
+  const CACHE_KEY = 'ub_wx_cache';
+  const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+  const cached = (() => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; } })();
+
+  function renderWx(data) {
+    document.getElementById('wTemp').textContent   = data.tmp + '°C';
+    document.getElementById('wDesc').textContent   = data.desc;
+    document.getElementById('wIcon').textContent   = data.ic;
+    document.getElementById('wHum').textContent    = '💧 Humidity ' + data.hum + '%';
+    document.getElementById('wWind').textContent   = '💨 Wind ' + data.wind + ' km/h';
+    document.getElementById('hTemp').textContent   = data.tmp + '°';
+    document.getElementById('hWxDesc').textContent = data.ic + ' ' + data.desc + ' · Bicholim';
+    if (data.fore) document.getElementById('wFore').innerHTML = data.fore;
+  }
+
+  // Show cached data immediately (instant load)
+  if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+    renderWx(cached);
+    return; // Still fresh — no need to fetch
+  }
+
+  // If stale cache exists, show it while fetching fresh data
+  if (cached) renderWx(cached);
+
+  // Fetch fresh data in background
   try {
-    const [curr,fore] = await Promise.all([
+    const [curr, fore] = await Promise.all([
       fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`).then(r=>r.json()),
       fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${key}&units=metric&cnt=9`).then(r=>r.json())
     ]);
-    if (curr.cod!==200) return;
-    const ic   = WX_ICONS[curr.weather[0].main]||'🌡️';
+    if (curr.cod !== 200) return;
+
+    const ic   = WX_ICONS[curr.weather[0].main] || '🌡️';
     const tmp  = Math.round(curr.main.temp);
-    const desc = curr.weather[0].description.charAt(0).toUpperCase()+curr.weather[0].description.slice(1);
-    document.getElementById('wTemp').textContent  = tmp+'°C';
-    document.getElementById('wDesc').textContent  = desc;
-    document.getElementById('wIcon').textContent  = ic;
-    document.getElementById('wHum').textContent   = '💧 Humidity '+curr.main.humidity+'%';
-    document.getElementById('wWind').textContent  = '💨 Wind '+Math.round(curr.wind.speed*3.6)+' km/h';
-    document.getElementById('hTemp').textContent  = tmp+'°';
-    document.getElementById('hWxDesc').textContent = ic+' '+desc+' · Bicholim';
+    const desc = curr.weather[0].description.charAt(0).toUpperCase() + curr.weather[0].description.slice(1);
+
+    // Build forecast string
+    let foreStr = '';
     if (fore.list) {
-      const days={};
-      fore.list.forEach(f=>{
-        const d=new Date(f.dt*1000).toLocaleDateString('en-IN',{weekday:'short'});
-        if(!days[d])days[d]={ic:WX_ICONS[f.weather[0].main]||'🌡️',t:Math.round(f.main.temp)};
+      const days = {};
+      fore.list.forEach(f => {
+        const d = new Date(f.dt*1000).toLocaleDateString('en-IN', {weekday:'short'});
+        if (!days[d]) days[d] = { ic: WX_ICONS[f.weather[0].main]||'🌡️', t: Math.round(f.main.temp) };
       });
-      document.getElementById('wFore').innerHTML = Object.entries(days).slice(0,3).map(([d,v])=>`<span>${d} ${v.ic} ${v.t}°</span>`).join('');
+      foreStr = Object.entries(days).slice(0,3).map(([d,v])=>`<span>${d} ${v.ic} ${v.t}°</span>`).join('');
     }
-  } catch(e) { console.log('Weather error:',e); }
+
+    const fresh = {
+      tmp, desc, ic,
+      hum:  curr.main.humidity,
+      wind: Math.round(curr.wind.speed * 3.6),
+      fore: foreStr,
+      ts:   Date.now()
+    };
+
+    // Save to cache
+    localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
+
+    // Render fresh data
+    renderWx(fresh);
+
+  } catch(e) { console.log('Weather error:', e); }
 }
 
 // ── ARTICLE VIEWER ───────────────────────────────────────────────
