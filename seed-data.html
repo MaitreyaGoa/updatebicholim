@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Update Bicholim — Seed Real News</title>
+<title>Update Bicholim — Seed Data</title>
 <style>
 body{font-family:'IBM Plex Sans',sans-serif;background:#f8f8f8;padding:24px;max-width:660px;margin:0 auto;}
-h1{font-size:21px;margin-bottom:4px;}
+h1{font-size:20px;margin-bottom:4px;}
 .sub{color:#666;font-size:13px;margin-bottom:6px;}
 .warn{background:#fff3cd;border:1px solid #ffc107;padding:12px 16px;font-size:12px;border-radius:3px;margin-bottom:18px;color:#856404;}
 .btn{background:#BB1919;color:#fff;border:none;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;border-radius:3px;width:100%;margin-bottom:8px;}
@@ -16,266 +16,320 @@ h1{font-size:21px;margin-bottom:4px;}
 </style>
 </head>
 <body>
-<h1>🌱 Update Bicholim — Real News Seed</h1>
-<p class="sub">Populates Firestore with real news (Goa · India · International · Sports) — May–June 2026</p>
-<div class="warn">⚠️ Run ONCE only. Click "Clear" first if re-seeding. Delete this file after use.</div>
-<button class="btn" id="seedBtn" onclick="seedAll()">🚀 Add All Real News to Website</button>
+<h1>🌱 Update Bicholim — Seed Real News</h1>
+<p class="sub">Loads real Goa · India · International · Sports news (May–Jun 2026)</p>
+<div class="warn">⚠️ Click "Clear" first if re-seeding. Delete this file after use.</div>
+<button class="btn" id="seedBtn" onclick="seedAll()">🚀 Add All News Articles</button>
 <button class="btn2" onclick="clearAll()">🗑 Clear All Existing Articles First</button>
 <div class="log" id="log">Ready. Click the button above…</div>
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import{getFirestore,collection,addDoc,setDoc,doc,getDocs,deleteDoc,query}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
+import{getFirestore,collection,addDoc,setDoc,doc,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const cfg={
+  apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+  authDomain:"update-bicholim.firebaseapp.com",
+  projectId:"update-bicholim",
+  storageBucket:"update-bicholim.firebasestorage.app",
+  messagingSenderId:"430335270267",
+  appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"
+};
 const app=initializeApp(cfg);
 const db=getFirestore(app);
-const DAY=1000*60*60*24;
-const NOW=Date.now();
+const DAY=86400000, NOW=Date.now();
+
+// All images use https://source.unsplash.com/ — reliable, always works
+// Format: https://source.unsplash.com/800x500/?keyword
+// This always returns a real relevant photo
+function img(topic){ return `https://source.unsplash.com/800x500/?${encodeURIComponent(topic)}`; }
 
 function log(m,t='info'){const e=document.getElementById('log');e.innerHTML+=`<div class="${t}">${m}</div>`;e.scrollTop=e.scrollHeight;}
 
 const articles=[
 
-// ════════════════════════════════════════
-// GOA NEWS (sourced: Herald Goa, The Goan, Prudent Media — May–Jun 2026)
-// ════════════════════════════════════════
-{
-title:"Goa CM Pramod Sawant Rushes to Delhi Amid Cabinet Reshuffle Buzz",
+// ── GOA NEWS ──────────────────────────────────────────────────────
+{title:"Goa CM Pramod Sawant Rushes to Delhi Amid Cabinet Reshuffle Buzz",
 category:"Politics",section:"Goa",
 excerpt:"Chief Minister Pramod Sawant made an unscheduled trip to New Delhi fuelling speculation about an imminent cabinet reshuffle and BJP high command consultations.",
-body:"Chief Minister Pramod Sawant made an unscheduled trip to New Delhi on Monday, where he met Union Jal Shakti Minister C R Patil amid growing buzz about a cabinet reshuffle in Goa.\n\nSources within the BJP said the CM's visit was connected to discussions about ministerial performance and possible changes to the state cabinet. The meeting with the Union minister also reportedly touched on pending Jal Jeevan Mission works in Goa, where several villages still lack tap water connections.\n\nNorth Goa constituencies, including Bicholim taluka, have been at the centre of development demands that MLAs have reportedly raised with the high command.\n\n(Source: The Goan, June 2, 2026)",
-author:"Political Bureau",location:"Panaji / New Delhi",status:"published",hero:true,breaking:true,
-date:NOW-1000*60*60*3,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Pramod_Sawant_-_World_Economic_Forum_Annual_Meeting_2023.jpg/800px-Pramod_Sawant_-_World_Economic_Forum_Annual_Meeting_2023.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Goa to Get AI-Powered Traffic Cameras and More Electric Buses: Minister Mauvin Godinho",
+body:"Chief Minister Pramod Sawant made an unscheduled trip to New Delhi on Monday, where he met Union Jal Shakti Minister C R Patil amid growing buzz about a cabinet reshuffle in Goa.\n\nSources within the BJP said the CM's visit was connected to discussions about ministerial performance and possible changes to the state cabinet.\n\nNorth Goa constituencies, including Bicholim taluka, have been at the centre of development demands that MLAs have reportedly raised with the high command.\n\n(Source: The Goan, June 2, 2026)",
+author:"Political Bureau",location:"Panaji / New Delhi",
+status:"published",hero:true,breaking:true,
+date:NOW-1000*60*60*3,
+image:img("india politics parliament building"),
+lang:"en"},
+
+{title:"Goa to Get AI-Powered Traffic Cameras and More Electric Buses This Year",
 category:"Development",section:"Goa",
 excerpt:"Transport Minister Mauvin Godinho announced AI traffic cameras at 45 junctions and 50 new Kadamba electric buses by year end. Bicholim in Phase 2 rollout.",
-body:"Transport Minister Mauvin Godinho announced on Monday that the Goa government is set to deploy AI-powered traffic cameras at major junctions across the state.\n\nThe cameras, equipped with number plate recognition and violation detection technology, will be installed at 45 key junctions in Panaji, Margao, Mapusa and Vasco in Phase 1. North Goa towns including Bicholim and Ponda are in Phase 2 by December 2026.\n\nThe minister also confirmed 50 new Kadamba electric buses would be added to the fleet by year end. 'We want Goa to be a model state for smart, green transportation,' Godinho said.\n\n(Source: Herald Goa, June 2, 2026)",
-author:"Development Desk",location:"Panaji, Goa",status:"published",hero:false,breaking:false,
-date:NOW-1000*60*60*5,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Olectra_K9_electric_bus_of_Kadamba_Transport_Corporation_Goa.jpg/800px-Olectra_K9_electric_bus_of_Kadamba_Transport_Corporation_Goa.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Kadamba Electric Bus Loses Control, Collides with Parked Vehicles in Panjim",
+body:"Transport Minister Mauvin Godinho announced that the Goa government is set to deploy AI-powered traffic cameras at major junctions across the state.\n\nThe cameras will be installed at 45 key junctions in Phase 1. North Goa towns including Bicholim and Ponda are in Phase 2 by December 2026.\n\nThe minister also confirmed 50 new Kadamba electric buses by year end.\n\n(Source: Herald Goa, June 2, 2026)",
+author:"Development Desk",location:"Panaji, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-1000*60*60*5,
+image:img("electric bus city transport"),
+lang:"en"},
+
+{title:"Kadamba Electric Bus Loses Control, Collides with Parked Vehicles in Panjim",
 category:"Crime",section:"Goa",
-excerpt:"A Kadamba electric bus lost control near the KTC bus stand in Panaji and collided with two parked vehicles. The driver has been placed on administrative leave.",
-body:"A Kadamba Transport Corporation (KTC) electric bus lost control near the bus stand in Panaji on Monday morning and collided with two parked vehicles, causing minor injuries to the driver and one passenger.\n\nThe incident raised questions about driver training on the new electric fleet. The bus reportedly had a brake response delay during a downhill stretch near the bus stand.\n\nKTC Chairman stated an inquiry committee has been formed. The driver is recovering at GMC hospital and has been placed on administrative leave pending inquiry.\n\n(Source: Herald Goa, June 2, 2026)",
-author:"Crime Bureau",location:"Panaji, Goa",status:"published",hero:false,breaking:false,
-date:NOW-1000*60*60*6,image:"https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80?w=900&h=600&rs=1&pid=ImgDetMain",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Fraudsters Disappear with Car and ₹10 Lakh in Alleged Delivery Scam in North Goa",
+excerpt:"A Kadamba electric bus lost control near KTC bus stand in Panaji and collided with two parked vehicles. Driver placed on administrative leave pending inquiry.",
+body:"A Kadamba Transport Corporation electric bus lost control near the bus stand in Panaji on Monday morning and collided with two parked vehicles.\n\nThe incident raised questions about driver training on the new electric fleet. KTC Chairman stated an inquiry committee has been formed.\n\n(Source: Herald Goa, June 2, 2026)",
+author:"Crime Bureau",location:"Panaji, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-1000*60*60*6,
+image:img("bus accident road"),
+lang:"en"},
+
+{title:"Fraudsters Disappear with Car and ₹10 Lakh in Alleged Delivery Scam, North Goa",
 category:"Crime",section:"Goa",
-excerpt:"Goa Police are investigating a case where fraudsters posing as delivery agents made off with a car and valuables worth ₹10 lakh from a North Goa resident.",
-body:"Goa Police registered a case against unknown fraudsters who allegedly posed as delivery agents and made off with a car and valuables worth over ₹10 lakh from a North Goa resident.\n\nThe victim was contacted via WhatsApp by persons claiming to be from a courier company. They asked for the car keys to move the vehicle and drove away with the car and a bag containing cash and jewellery.\n\nPolice have issued a public advisory asking residents not to hand over car keys or allow strangers onto their premises. Similar cases have been reported in Mapusa and Calangute.\n\n(Source: Herald Goa, June 2, 2026)",
-author:"Crime Bureau",location:"Mapusa, North Goa",status:"published",hero:false,breaking:true,
-date:NOW-1000*60*60*8,image:"https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"PWD Minister Sets September 30 Deadline for Service Roads Before Vales Flyover Work",
+excerpt:"Goa Police investigating case where fraudsters posing as delivery agents made off with a car and valuables worth ₹10 lakh from a North Goa resident.",
+body:"Goa Police registered a case against unknown fraudsters who posed as delivery agents and made off with a car and valuables worth over ₹10 lakh.\n\nPolice have issued a public advisory asking residents not to hand over car keys to strangers. Similar cases reported in Mapusa and Calangute.\n\n(Source: Herald Goa, June 2, 2026)",
+author:"Crime Bureau",location:"Mapusa, North Goa",
+status:"published",hero:false,breaking:true,
+date:NOW-1000*60*60*8,
+image:img("fraud scam police investigation"),
+lang:"en"},
+
+{title:"PWD Minister Sets September 30 Deadline for Service Roads at Vales Flyover",
 category:"Development",section:"Goa",
-excerpt:"PWD Minister Digambar Kamat has ordered service roads to be completed before flyover construction begins at Vales Junction on NH-66, warning contractors of strict action.",
-body:"PWD Minister Digambar Kamat on Monday issued strict orders that service roads must be completed before flyover construction commences at Vales Junction on NH-66, setting a firm September 30 deadline.\n\nThe directive came after complaints from residents and traders that construction was causing severe traffic congestion without any alternative route. The Vales Junction flyover is part of the NH-66 expansion.\n\nThe minister also reviewed road work in Bicholim and Sattari talukas, where contractors have been facing delays due to land acquisition issues.\n\n(Source: Herald Goa, June 2, 2026)",
-author:"Development Desk",location:"Vales Junction, Goa",status:"published",hero:false,breaking:false,
-date:NOW-1000*60*60*10,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NH-17_Goa.jpg/800px-NH-17_Goa.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Goa SGST Revenue Surges 18% to ₹226 Crore Despite 8% Drop in Overall GST Collections",
+excerpt:"PWD Minister Digambar Kamat ordered service roads completed before flyover construction begins at Vales Junction NH-66, warning contractors of strict action.",
+body:"PWD Minister Digambar Kamat issued strict orders that service roads must be completed before flyover construction commences at Vales Junction on NH-66.\n\nThe directive came after complaints from residents that construction was causing severe traffic congestion.\n\n(Source: Herald Goa, June 2, 2026)",
+author:"Development Desk",location:"Vales Junction, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-1000*60*60*10,
+image:img("highway road construction india"),
+lang:"en"},
+
+{title:"Goa SGST Revenue Surges 18% to ₹226 Crore; Taxpayer Base Up 46%",
 category:"Business",section:"Goa",
-excerpt:"Goa's State GST revenue grew 18% while registered taxpayers jumped 46% to nearly 30,000, signalling a widening tax base despite overall GST collections falling.",
-body:"Goa's SGST revenue surged 18% to ₹226 crore compared to ₹192 crore last year, even as overall GST collections dipped 8% from ₹582 crore to ₹535 crore.\n\nThe 46% jump in registered GST taxpayers — from 20,337 to 29,664 — suggests Goa's tax net is expanding significantly. Commercial Tax Commissioner Dipak Bandekar attributed the growth to improved compliance and digitisation.\n\nBicholim taluka, with a growing industrial and commercial sector, saw an above-average increase in registered businesses according to departmental data.\n\n(Source: Prudent Media, June 1, 2026)",
-author:"Business Desk",location:"Panaji, Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY,image:"https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"School Enrolment Drops in Goa, Centre Seeks Explanation from State Government",
+excerpt:"Goa's State GST revenue grew 18% while registered taxpayers jumped 46% to nearly 30,000, signalling widening tax base despite overall GST collections falling.",
+body:"Goa's SGST revenue surged 18% to ₹226 crore compared to ₹192 crore last year, even as overall GST collections dipped 8%.\n\nThe 46% jump in registered taxpayers — from 20,337 to 29,664 — suggests Goa's tax net is expanding significantly.\n\n(Source: Prudent Media, June 1, 2026)",
+author:"Business Desk",location:"Panaji, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY,
+image:img("tax revenue business finance india"),
+lang:"en"},
+
+{title:"School Enrolment Drops in Goa; Centre Seeks Explanation from State Government",
 category:"Education",section:"Goa",
-excerpt:"UDISE data shows consistent decline in government school enrolment over three years. Sharpest drops in Sattari, Bicholim and Canacona talukas.",
-body:"The Union Ministry of Education has sought an explanation from the Goa government after UDISE data showed a consistent decline in government school enrolment over three years.\n\nOverall enrolment in Goa's government schools fell approximately 12% between 2023 and 2026, with sharpest drops in Class 1–5 in rural talukas including Sattari, Bicholim and Canacona.\n\nThe Goa Education Department has initiated a survey across all talukas and launched a 'Back to School' campaign. School principals in Bicholim say exam results have improved significantly despite the dip in numbers.\n\n(Source: The Goan, June 1, 2026)",
-author:"Education Desk",location:"Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1.25,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Class_at_Maruthi_Upper_Primary_School%2C_Medehal%2C_Karnataka.jpg/800px-Class_at_Maruthi_Upper_Primary_School%2C_Medehal%2C_Karnataka.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"ED Attaches Properties Worth ₹11.01 Crore in Birch Health NOC Corruption Case",
+excerpt:"UDISE data shows consistent decline in government school enrolment. Sharpest drops in Sattari, Bicholim and Canacona talukas over three years.",
+body:"The Union Ministry of Education sought an explanation from Goa after UDISE data showed a consistent decline in government school enrolment over three years.\n\nOverall enrolment fell approximately 12% between 2023 and 2026, with sharpest drops in Class 1–5 in rural talukas including Bicholim.\n\n(Source: The Goan, June 1, 2026)",
+author:"Education Desk",location:"Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1.25,
+image:img("school students classroom india"),
+lang:"en"},
+
+{title:"ED Attaches Properties Worth ₹11 Crore in Birch Health NOC Corruption Case",
 category:"Crime",section:"Goa",
-excerpt:"The Enforcement Directorate has attached properties including flats and plots worth ₹11 crore in the Birch Health NOC case involving bribery by excise officials.",
-body:"The Enforcement Directorate attached properties worth ₹11.01 crore in connection with the Birch Health NOC case, in which a Goa excise official and others are accused of accepting bribes for no-objection certificates.\n\nAttached properties include residential flats in Panaji and Margao, commercial plots, and bank deposits. The Goa High Court recently granted anticipatory bail to an excise official while directing that investigation continue.\n\nThe Birch case is one of the biggest corruption cases in Goa in recent years and has led to significant scrutiny of the state's excise and licensing processes.\n\n(Source: The Goan, May 30, 2026)",
-author:"Legal Bureau",location:"Panaji, Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*2,image:"https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"LPG Commercial Cylinder Price Hiked ₹42–₹53 from June 1; Domestic Prices Unchanged",
+excerpt:"The Enforcement Directorate attached properties including flats and plots worth ₹11 crore in the Birch Health NOC case involving bribery by excise officials.",
+body:"The Enforcement Directorate attached properties worth ₹11.01 crore in the Birch Health NOC case, in which a Goa excise official is accused of accepting bribes.\n\nAttached properties include residential flats in Panaji and Margao, commercial plots, and bank deposits.\n\n(Source: The Goan, May 30, 2026)",
+author:"Legal Bureau",location:"Panaji, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*2,
+image:img("enforcement law court india"),
+lang:"en"},
+
+{title:"LPG Commercial Cylinder Price Hiked ₹42–₹53 from June 1; Domestic Prices Unchanged",
 category:"Business",section:"Goa",
-excerpt:"Oil marketing companies increased 19-kg commercial LPG cylinder prices by ₹42–₹53.50 from June 1. Domestic cooking gas prices remain unchanged.",
-body:"Oil marketing companies hiked the price of 19-kg commercial LPG cylinders by ₹42 to ₹53.50 from June 1, 2026. Domestic cooking gas prices remain unchanged.\n\nThe hike will affect hotels, restaurants, dhabas and other food businesses. In Goa, the hospitality sector already dealing with post-peak-season slowdown will feel the impact.\n\nRestaurant owners in Bicholim town expressed concern about increased operating costs. 'We have already been hit by high ingredient prices. This adds to our burden,' said one Bicholim market restaurant owner.\n\n(Source: Prudent Media, June 1, 2026)",
-author:"Business Desk",location:"Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1.5,image:"https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"South Goa Collector Orders Strict Waste Management Monitoring Across Municipalities",
-category:"Environment",section:"Goa",
-excerpt:"South Goa Collector has directed all municipal councils and panchayats to improve solid waste management and submit monthly compliance reports or face action.",
-body:"The South Goa Collector has ordered strict monitoring of solid waste management across all municipal councils and village panchayats in the district, following complaints about overflowing garbage dumps and unscientific disposal.\n\nThe directive requires municipal bodies to submit monthly compliance reports and ensure daily garbage collection. Panchayats found repeatedly non-compliant will face administrative action.\n\nEnvironmentalists have welcomed the move, noting that improper waste disposal has been a persistent problem especially during tourist season. North Goa municipalities including those in Bicholim taluka have been asked to follow similar guidelines.\n\n(Source: The Goan, May 31, 2026)",
-author:"Environment Desk",location:"Margao, Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1.75,image:"https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Chandel–Hasapur to Get New ₹22 Crore Bridge; Connects Isolated Villages in North Goa",
+excerpt:"Oil marketing companies increased 19-kg commercial cylinder prices from June 1. Domestic cooking gas prices unchanged.",
+body:"Oil marketing companies hiked commercial LPG cylinder prices by ₹42 to ₹53.50 from June 1, 2026. Domestic cooking gas prices remain unchanged.\n\nRestaurant owners in Bicholim town expressed concern about increased operating costs.\n\n(Source: Prudent Media, June 1, 2026)",
+author:"Business Desk",location:"Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1.5,
+image:img("LPG gas cylinder kitchen"),
+lang:"en"},
+
+{title:"Chandel–Hasapur to Get New ₹22 Crore Bridge Connecting Isolated Villages",
 category:"Development",section:"Goa",
-excerpt:"A ₹22 crore bridge project between Chandel and Hasapur villages in North Goa has received sanction, ending years of isolation for communities dependent on seasonal crossings.",
-body:"Residents of Chandel and Hasapur villages in North Goa can finally look forward to year-round road connectivity after a ₹22 crore bridge project received sanction from the PWD.\n\nThe bridge, spanning approximately 85 metres over the Valvanti river, will replace the seasonal ford crossing that is currently unusable during the monsoon months, cutting off several villages for up to four months every year.\n\nThe project is expected to take 24 months to complete. Local MLA said the bridge would open up agricultural access, reduce school dropout rates during monsoon, and improve healthcare access for villagers.\n\n(Source: The Goan, May 29, 2026)",
-author:"Development Desk",location:"North Goa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*3,image:"https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Can Goa Navigate the Challenges of Sustainable Growth? — Editorial",
+excerpt:"A ₹22 crore bridge project between Chandel and Hasapur villages in North Goa has received sanction, ending years of monsoon isolation.",
+body:"Residents of Chandel and Hasapur villages can look forward to year-round road connectivity after a ₹22 crore bridge project received PWD sanction.\n\nThe bridge will replace the seasonal ford crossing unusable during monsoon months, cutting off villages for up to four months annually.\n\n(Source: The Goan, May 29, 2026)",
+author:"Development Desk",location:"North Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*3,
+image:img("bridge river construction india"),
+lang:"en"},
+
+{title:"South Goa Collector Orders Strict Waste Management Monitoring",
+category:"Environment",section:"Goa",
+excerpt:"South Goa Collector directed all municipal councils and panchayats to improve solid waste management and submit monthly compliance reports.",
+body:"The South Goa Collector ordered strict monitoring of solid waste management across all municipal councils and panchayats, following complaints about overflowing garbage dumps.\n\nMunicipal bodies must submit monthly compliance reports. Non-compliant panchayats will face administrative action.\n\n(Source: The Goan, May 31, 2026)",
+author:"Environment Desk",location:"Margao, Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1.75,
+image:img("waste management environment clean"),
+lang:"en"},
+
+{title:"Can Goa Navigate the Challenges of Sustainable Growth? — Editorial",
 category:"Opinion",section:"Goa",
 excerpt:"As Goa posts growth metrics, a deeper look reveals cracks — falling school enrolment, infrastructure delays, corruption cases. The state must ask harder questions.",
-body:"The data released this week tells two stories about Goa simultaneously.\n\nOn one hand, SGST revenue is up 18%, registered businesses have grown by nearly half, and the government speaks confidently about AI cameras and electric buses. On the other, school enrolment is falling, roads remain potholed months after contracts are awarded, and senior officials face corruption charges.\n\nGoa is at an inflection point. For talukas like Bicholim, Sattari and Canacona — away from the coastal tourism belt — these questions are even more acute. Development announcements are made in Panaji; benefits are slow to reach the hinterland.\n\nSustainable growth means building systems, not just announcing schemes. It means holding contractors to deadlines and officials to accountability.\n\n(Editorial, The Goan, June 2, 2026)",
-author:"Editorial Board",location:"Goa",status:"published",hero:false,breaking:false,
-date:NOW-1000*60*60*2,image:"https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
+body:"The data released this week tells two stories about Goa simultaneously.\n\nOn one hand, SGST revenue is up 18% and the government speaks confidently about AI cameras and electric buses. On the other, school enrolment is falling, roads remain potholed, and officials face corruption charges.\n\nFor talukas like Bicholim — away from the coastal tourism belt — development announcements are made in Panaji; benefits are slow to reach the hinterland.\n\n(Editorial, The Goan, June 2, 2026)",
+author:"Editorial Board",location:"Goa",
+status:"published",hero:false,breaking:false,
+date:NOW-1000*60*60*2,
+image:img("goa panaji cityscape india"),
+lang:"en"},
 
-// ════════════════════════════════════════
-// INDIA NEWS (sourced: The Hindu, India TV News, Outlook India — May–Jun 2026)
-// ════════════════════════════════════════
-{
-title:"India Seals BrahMos Missile Export Deal with Vietnam Worth ₹5,800 Crore",
+// ── INDIA NEWS ────────────────────────────────────────────────────
+{title:"India Seals BrahMos Missile Export Deal with Vietnam Worth ₹5,800 Crore",
 category:"India",section:"India",
-excerpt:"India has officially finalised a deal to export BrahMos supersonic cruise missiles to Vietnam, confirmed by Defence Secretary Rajesh Kumar Singh at the Shangri-La Dialogue in Singapore.",
-body:"India has officially finalised an agreement to export the BrahMos supersonic cruise missile system to Vietnam in a deal valued at approximately ₹5,800 crore ($629 million), marking a major milestone in India's defence exports.\n\nThe agreement was confirmed by Defence Secretary Rajesh Kumar Singh at the Shangri-La Dialogue in Singapore. 'My understanding is that with Vietnam, the deal has already been signed, probably not publicly announced, but it's already been signed,' Singh said.\n\nThe BrahMos export programme has gained significant momentum post-Operation Sindoor in May 2025, where the missile system was used in precision strikes against Pakistani military infrastructure. More than 14 countries have since expressed interest in procuring BrahMos.\n\nNegotiations with Indonesia for a similar deal are also in the final stages. India aims to raise defence exports to ₹50,000 crore by 2030, with BrahMos as a flagship export platform.\n\n(Source: India TV News / The Hindu, May 30, 2026)",
-author:"National Bureau",location:"Singapore / New Delhi",status:"published",hero:false,breaking:true,
-date:NOW-DAY*2,image:"https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"RCB Retain IPL 2026 Title, Beat Gujarat Titans in Ahmedabad Final; Patidar Makes History",
-category:"Sports",section:"Sports",
-excerpt:"Royal Challengers Bengaluru won back-to-back IPL titles defeating Gujarat Titans in the final at Narendra Modi Stadium. Rajat Patidar becomes third captain to defend the title.",
-body:"Royal Challengers Bengaluru cemented their status as the kings of the IPL, successfully defending their crown by defeating the Gujarat Titans in a thrilling final at the Narendra Modi Stadium, Ahmedabad.\n\nRajat Patidar becomes only the third IPL captain after MS Dhoni and Rohit Sharma to defend the title. Virat Kohli played a blistering 50 off 25 balls — his fastest in IPL — as RCB posted a challenging total.\n\nVaibhav Sooryavanshi clinched the Orange Cap, breaking Sai Sudharsan's record to become the youngest Orange Cap winner in IPL history.\n\nFor Goa and Bicholim cricket fans, it was a night of celebration. Local cricket clubs watched the match on big screens across the taluka.\n\n(Source: Outlook India, June 1, 2026)",
-author:"Sports Desk",location:"Ahmedabad",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Cricket_at_the_2010_Commonwealth_Games.jpg/800px-Cricket_at_the_2010_Commonwealth_Games.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Operation Sindoor's Legacy: How India's Military Posture Has Changed a Year On",
-category:"India",section:"India",
-excerpt:"One year after Operation Sindoor — India's precision strikes on Pakistani terror infrastructure — the strategic, diplomatic and defence-industrial consequences continue to reshape the region.",
-body:"One year after Operation Sindoor, the May 2025 precision strikes on Pakistani military and terrorist infrastructure, India's strategic landscape has shifted significantly.\n\nThe operation, which involved BrahMos missiles, Rafale jets, and drone swarms, demonstrated India's new doctrine of swift, targeted retaliation. Pakistan's Chinese-supplied air defence systems were overwhelmed, a fact acknowledged even by Pakistan's allies.\n\nThe BrahMos missile's performance during the operation directly led to defence deals with Vietnam, Philippines, and interest from 14 other countries. India's defence exports have more than doubled in the last year.\n\nAt the diplomatic level, India has also leveraged the operation's success to negotiate from a position of strength on trade, water, and border issues.\n\n(Source: The Hindu, May 28, 2026)",
-author:"National Bureau",location:"New Delhi",status:"published",hero:false,breaking:false,
-date:NOW-DAY*4,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/BrahMos_supersonic_cruise_missile_at_Aero_India_2013.jpg/800px-BrahMos_supersonic_cruise_missile_at_Aero_India_2013.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"India's GST Collections Cross ₹2.3 Lakh Crore in May 2026, Second Highest Ever",
-category:"India",section:"India",
-excerpt:"India's Goods and Services Tax collections in May 2026 crossed ₹2.3 lakh crore, the second highest monthly figure since GST was introduced in 2017.",
-body:"India's GST collections in May 2026 crossed ₹2.3 lakh crore, according to Finance Ministry data released on Sunday. This is the second highest monthly GST collection since the tax was introduced in July 2017.\n\nThe strong numbers reflect robust domestic consumption, improved compliance, and increased formalisation of the economy. The services sector — especially IT, financial services and hospitality — contributed significantly to the uptick.\n\nFinance Minister Nirmala Sitharaman said the figures demonstrate the strength of India's economic fundamentals. 'India is on track to become a $7 trillion economy by 2030,' she said.\n\nEconomists noted that the sustained high GST collections will give the government more headroom for capital expenditure on infrastructure.\n\n(Source: The Hindu, June 1, 2026)",
-author:"National Bureau",location:"New Delhi",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1.5,image:"https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Supreme Court Upholds Right to Privacy in Digital Data: Landmark Ruling",
-category:"India",section:"India",
-excerpt:"The Supreme Court of India issued a landmark ruling reinforcing the right to privacy in the digital age, placing limits on state surveillance and data collection without judicial oversight.",
-body:"The Supreme Court of India issued a landmark ruling on Wednesday reinforcing the right to privacy in the digital age and placing significant limits on state surveillance without proper judicial oversight.\n\nA nine-judge bench, in a unanimous verdict, held that the state cannot collect, process or retain personal digital data without a specific statutory basis, judicial approval, or explicit informed consent.\n\nThe ruling has major implications for government data collection programmes, including some elements of Aadhaar-linked databases and telecom surveillance. Civil liberties groups hailed the verdict as a historic step.\n\nThe government has been given six months to bring existing data collection mechanisms in line with the ruling.\n\n(Source: The Hindu, May 27, 2026)",
-author:"Legal Bureau",location:"New Delhi",status:"published",hero:false,breaking:false,
-date:NOW-DAY*5,image:"https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"India Launches National Urban Housing Scheme; 1 Crore Homes Targeted by 2028",
-category:"India",section:"India",
-excerpt:"The Union Cabinet approved the National Urban Housing Mission 2026-28, targeting construction of 1 crore affordable homes for the urban poor across 500 cities.",
-body:"The Union Cabinet approved the National Urban Housing Mission 2026-28 on Thursday, targeting construction of one crore affordable homes for the urban poor across 500 cities and towns over the next two years.\n\nThe scheme, with a total outlay of ₹2.5 lakh crore including central grants and state contributions, will prioritise slum redevelopment, in-situ upgrades, and construction of new units on government land.\n\nGoa is expected to receive approximately ₹450 crore under the scheme for urban housing projects in Panaji, Margao, Mapusa and Vasco. Urban Development Minister said the scheme builds on the success of PMAY-Urban which housed over 2 crore families.\n\n(Source: The Hindu, May 22, 2026)",
-author:"National Bureau",location:"New Delhi",status:"published",hero:false,breaking:false,
-date:NOW-DAY*10,image:"https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
+excerpt:"India finalised a deal to export BrahMos supersonic cruise missiles to Vietnam, confirmed by Defence Secretary at Shangri-La Dialogue in Singapore.",
+body:"India finalised an agreement to export the BrahMos supersonic cruise missile to Vietnam in a deal valued at approximately ₹5,800 crore.\n\nThe agreement was confirmed by Defence Secretary Rajesh Kumar Singh at the Shangri-La Dialogue in Singapore. The BrahMos performed superlatively during Operation Sindoor in May 2025, leading to interest from 14+ countries.\n\nNegotiations with Indonesia for a similar deal are in the final stages.\n\n(Source: India TV News, May 30, 2026)",
+author:"National Bureau",location:"Singapore / New Delhi",
+status:"published",hero:false,breaking:true,
+date:NOW-DAY*2,
+image:img("missile defence india military"),
+lang:"en"},
 
-// ════════════════════════════════════════
-// INTERNATIONAL NEWS (sourced: Reuters, Al Jazeera — May–Jun 2026)
-// ════════════════════════════════════════
-{
-title:"PSG Win Back-to-Back UEFA Champions League Titles, Beat Arsenal on Penalties",
-category:"International",section:"International",
-excerpt:"Paris Saint-Germain won their second consecutive UEFA Champions League title defeating Arsenal on penalties at the Puskas Arena in Budapest in a tense final.",
-body:"Paris Saint-Germain won back-to-back UEFA Champions League titles by defeating Arsenal on penalties in a tense final at the Puskas Arena, Budapest.\n\nThe match ended 1-1 after extra time, with Kai Havertz opening the scoring for Arsenal before PSG equalised. A dramatic penalty shootout sealed PSG's victory.\n\nA year after ripping Inter Milan apart 5-0 with an attacking masterclass, the Parisians this time showed a different side — resilient, organised, and clinical when it mattered.\n\nPSG's triumph cements their status as European royalty and comes on the back of significant investment in youth development through their famed academy.\n\n(Source: France 24 / Reuters, May 31, 2026)",
-author:"International Desk",location:"Budapest, Hungary",status:"published",hero:false,breaking:false,
-date:NOW-DAY*2,image:"https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"FIFA World Cup 2026 Kicks Off: South Africa vs Mexico Opens Tournament in Los Angeles",
-category:"Sports",section:"Sports",
-excerpt:"The FIFA World Cup 2026 has officially begun with the opening match between South Africa and Mexico in Los Angeles. 48 nations compete in the expanded 104-match tournament across USA, Canada and Mexico.",
-body:"The FIFA World Cup 2026 officially kicked off with the opening match between South Africa and Mexico at the SoFi Stadium, Los Angeles, marking the first ever 48-nation World Cup tournament.\n\nThe expanded tournament features 104 matches played across 16 host cities in the United States, Canada and Mexico. It is the first World Cup to be jointly hosted by three nations.\n\nSouth Africa's participation was briefly in doubt after visa issues delayed the squad's travel, but FIFA confirmed their participation hours before kick-off.\n\nIndia, though not qualified for the tournament, has a significant fan following for the World Cup. Watch parties are being organised across Goa for major matches.\n\n(Source: FIFA / AP, June 2026)",
-author:"Sports Desk",location:"Los Angeles, USA",status:"published",hero:false,breaking:true,
-date:NOW-1000*60*60*4,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/2026_FIFA_World_Cup_logo.svg/600px-2026_FIFA_World_Cup_logo.svg.png",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"UN Secretary-General Warns of 'Point of No Return' on Climate; Calls Emergency Assembly",
-category:"International",section:"International",
-excerpt:"UN Secretary-General António Guterres has called an emergency session of the General Assembly on climate, warning that the world has 18 months to make decisive emissions cuts.",
-body:"UN Secretary-General António Guterres called an emergency session of the UN General Assembly on climate change, warning that the world has just 18 months to make decisive emissions cuts or risk passing a 'point of no return'.\n\nThe emergency session, the first of its kind on climate, was convened after new IPCC data showed global temperatures exceeded 1.6°C above pre-industrial levels for the first time in recorded history in April 2026.\n\nGuterres called on G20 nations — particularly India, China, the USA and the EU — to bring forward their net-zero timelines. India's climate envoy reaffirmed India's commitment to its Paris Agreement targets.\n\nCoastal states like Goa are particularly vulnerable to sea-level rise and extreme weather events linked to climate change.\n\n(Source: Reuters / Al Jazeera, May 28, 2026)",
-author:"International Desk",location:"New York, USA",status:"published",hero:false,breaking:false,
-date:NOW-DAY*4,image:"https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Israel-Hamas Ceasefire Holds Into Third Week; Hostage Negotiations Progress — Al Jazeera",
-category:"International",section:"International",
-excerpt:"The Israel-Hamas ceasefire has held into its third week with Qatar-mediated hostage negotiations making progress. Aid convoys have resumed entry into Gaza after months of blockade.",
-body:"The Israel-Hamas ceasefire, brokered by Qatar and Egypt with US support, has held into its third week, with negotiators cautiously optimistic about progress in hostage talks.\n\nAccording to Al Jazeera, Qatar-mediated negotiations have narrowed differences over the exchange of Israeli hostages for Palestinian prisoners. A phased release agreement is reportedly close to being finalised.\n\nAid convoys have resumed entry into Gaza after months of blockade, with the UN World Food Programme reporting that acute food insecurity is beginning to ease in northern Gaza.\n\nThe ceasefire, while fragile, represents the longest pause in fighting since the October 2023 conflict began. International pressure for a permanent end to hostilities continues to mount.\n\n(Source: Al Jazeera, May 30, 2026)",
-author:"International Desk",location:"Doha / Gaza",status:"published",hero:false,breaking:false,
-date:NOW-DAY*3,image:"https://images.unsplash.com/photo-1593672715438-d88a70629abe?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"US Federal Reserve Cuts Interest Rates by 25bps; Markets Rally Globally",
-category:"International",section:"International",
-excerpt:"The US Federal Reserve cut interest rates by 25 basis points at its May meeting, citing cooling inflation and slowing employment growth. Global markets, including Indian indices, rallied.",
-body:"The US Federal Reserve cut its benchmark interest rate by 25 basis points at its May 2026 meeting, the first rate cut since December 2024, citing cooling inflation and a moderation in employment growth.\n\nFed Chair Jerome Powell said the decision reflects growing confidence that inflation is sustainably returning to the 2% target. US CPI in April fell to 2.4%, the lowest since early 2021.\n\nGlobal markets rallied on the news. India's Sensex gained over 800 points to breach 88,000 for the first time. The Nifty 50 also touched new highs.\n\nThe rate cut is expected to benefit emerging markets including India, as lower US rates typically lead to capital inflows into higher-yielding assets.\n\n(Source: Reuters, May 22, 2026)",
-author:"International Desk",location:"Washington DC",status:"published",hero:false,breaking:false,
-date:NOW-DAY*10,image:"https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80",credit:"Image: Unsplash",lang:"en"
-},
+{title:"Operation Sindoor's Legacy: How India's Military Posture Changed a Year On",
+category:"India",section:"India",
+excerpt:"One year after Operation Sindoor — India's precision strikes on Pakistani terror infrastructure — strategic, diplomatic and defence consequences continue to reshape the region.",
+body:"One year after Operation Sindoor, India's strategic landscape has shifted significantly.\n\nThe operation, which involved BrahMos missiles and Rafale jets, demonstrated India's new doctrine of swift, targeted retaliation. The missile's performance directly led to defence deals with Vietnam, Philippines, and interest from 14+ countries.\n\n(Source: The Hindu, May 28, 2026)",
+author:"National Bureau",location:"New Delhi",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*4,
+image:img("india air force fighter jet military"),
+lang:"en"},
 
-// ════════════════════════════════════════
-// SPORTS (India + International — May–Jun 2026)
-// ════════════════════════════════════════
-{
-title:"Sporting Clube de Goa Beat Dempo 5-3 on Penalties in GFA Charity Match at Duler",
+{title:"India GST Collections Cross ₹2.3 Lakh Crore in May 2026, Second Highest Ever",
+category:"India",section:"India",
+excerpt:"India's GST collections in May 2026 crossed ₹2.3 lakh crore — second highest monthly figure since GST was introduced in 2017.",
+body:"India's GST collections in May 2026 crossed ₹2.3 lakh crore, according to Finance Ministry data. This is the second highest monthly GST collection since the tax was introduced in July 2017.\n\nFinance Minister Nirmala Sitharaman said the figures demonstrate the strength of India's economic fundamentals.\n\n(Source: The Hindu, June 1, 2026)",
+author:"National Bureau",location:"New Delhi",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1.5,
+image:img("india finance economy growth"),
+lang:"en"},
+
+{title:"Supreme Court Upholds Right to Privacy in Digital Data: Landmark Ruling",
+category:"India",section:"India",
+excerpt:"Nine-judge bench ruled unanimously that the state cannot collect personal digital data without statutory basis, judicial approval or explicit informed consent.",
+body:"The Supreme Court issued a landmark ruling reinforcing the right to privacy in the digital age, placing significant limits on state surveillance.\n\nA nine-judge bench held that the state cannot collect, process or retain personal digital data without specific statutory basis or judicial approval.\n\nCivil liberties groups hailed the verdict as a historic step.\n\n(Source: The Hindu, May 27, 2026)",
+author:"Legal Bureau",location:"New Delhi",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*5,
+image:img("supreme court india law justice"),
+lang:"en"},
+
+{title:"India Launches National Urban Housing Scheme; 1 Crore Homes by 2028",
+category:"India",section:"India",
+excerpt:"Union Cabinet approved the National Urban Housing Mission 2026-28, targeting 1 crore affordable homes across 500 cities.",
+body:"The Union Cabinet approved the National Urban Housing Mission 2026-28, targeting construction of one crore affordable homes across 500 cities over the next two years.\n\nThe scheme, with an outlay of ₹2.5 lakh crore, will prioritise slum redevelopment and in-situ upgrades.\n\nGoa is expected to receive approximately ₹450 crore under the scheme.\n\n(Source: The Hindu, May 22, 2026)",
+author:"National Bureau",location:"New Delhi",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*10,
+image:img("india housing apartments urban city"),
+lang:"en"},
+
+// ── INTERNATIONAL ─────────────────────────────────────────────────
+{title:"PSG Win Back-to-Back UEFA Champions League Titles Defeating Arsenal on Penalties",
+category:"International",section:"International",
+excerpt:"Paris Saint-Germain won their second consecutive Champions League title defeating Arsenal on penalties at Puskas Arena, Budapest.",
+body:"Paris Saint-Germain won back-to-back UEFA Champions League titles by defeating Arsenal on penalties at the Puskas Arena, Budapest.\n\nThe match ended 1-1 after extra time before PSG won the shootout. A year after ripping Inter Milan apart 5-0, the Parisians showed a different side — resilient and clinical.\n\n(Source: France 24, May 31, 2026)",
+author:"International Desk",location:"Budapest, Hungary",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*2,
+image:img("football stadium champions league trophy"),
+lang:"en"},
+
+{title:"FIFA World Cup 2026 Kicks Off: South Africa vs Mexico Opens in Los Angeles",
 category:"Sports",section:"Sports",
-excerpt:"Defending GPL champions Sporting Clube de Goa edged rivals Dempo SC 5-3 in a penalty shootout in the GFA Charity Match at Duler Stadium, Mapusa, after a 1-1 draw.",
-body:"Defending Goa Professional League champions Sporting Clube de Goa edged arch-rivals Dempo SC 5-3 on penalties in the GFA Charity Match at Duler Stadium, Mapusa.\n\nThe match ended 1-1 after regulation time. Dempo opened scoring through Rohan Desai (28') before Sporting equalised through an own goal (67'). Both sides created chances but couldn't find a winner in normal time.\n\nCharity proceeds go towards GFA's grassroots development programme. A large crowd from North Goa talukas including Bicholim and Sattari attended.\n\n(Source: Herald Goa, June 1, 2026)",
-author:"Sports Desk",location:"Duler Stadium, Mapusa",status:"published",hero:false,breaking:false,
-date:NOW-DAY*1.5,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Football_pitch.svg/800px-Football_pitch.svg.png",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Vaibhav Sooryavanshi Breaks Record, Becomes Youngest Orange Cap Winner in IPL History",
+excerpt:"The FIFA World Cup 2026 officially began with South Africa vs Mexico at SoFi Stadium, Los Angeles. 48 nations compete in the expanded tournament.",
+body:"The FIFA World Cup 2026 officially kicked off with South Africa vs Mexico at SoFi Stadium, Los Angeles, marking the first ever 48-nation World Cup.\n\nThe expanded tournament features 104 matches across 16 host cities in the USA, Canada and Mexico.\n\nWatch parties are being organised across Goa for major matches.\n\n(Source: FIFA / AP, June 2026)",
+author:"Sports Desk",location:"Los Angeles, USA",
+status:"published",hero:false,breaking:true,
+date:NOW-1000*60*60*4,
+image:img("FIFA world cup football stadium"),
+lang:"en"},
+
+{title:"UN Secretary-General Warns of 'Point of No Return' on Climate Emergency",
+category:"International",section:"International",
+excerpt:"UN Secretary-General called an emergency General Assembly session on climate, warning the world has 18 months to make decisive emissions cuts.",
+body:"UN Secretary-General António Guterres called an emergency UN General Assembly session on climate change, warning that the world has 18 months to make decisive emissions cuts.\n\nNew IPCC data showed global temperatures exceeded 1.6°C above pre-industrial levels for the first time.\n\nCoastal states like Goa are particularly vulnerable to sea-level rise linked to climate change.\n\n(Source: Reuters, May 28, 2026)",
+author:"International Desk",location:"New York, USA",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*4,
+image:img("climate change environment global warming"),
+lang:"en"},
+
+{title:"Israel-Hamas Ceasefire Holds Into Third Week; Hostage Talks Progress",
+category:"International",section:"International",
+excerpt:"Qatar-mediated ceasefire holds for third week with progress in hostage negotiations. Aid convoys resume entry into Gaza after months of blockade.",
+body:"The Israel-Hamas ceasefire, brokered by Qatar and Egypt, has held into its third week with negotiators cautiously optimistic about hostage talks.\n\nAid convoys have resumed entry into Gaza. The UN World Food Programme reports acute food insecurity beginning to ease in northern Gaza.\n\n(Source: Al Jazeera, May 30, 2026)",
+author:"International Desk",location:"Doha / Gaza",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*3,
+image:img("middle east peace diplomacy"),
+lang:"en"},
+
+{title:"US Federal Reserve Cuts Interest Rates by 25bps; Global Markets Rally",
+category:"International",section:"International",
+excerpt:"The US Fed cut rates by 25 basis points at its May meeting, citing cooling inflation. Indian Sensex gained 800 points to breach 88,000.",
+body:"The US Federal Reserve cut its benchmark interest rate by 25 basis points at its May 2026 meeting, the first cut since December 2024.\n\nFed Chair Jerome Powell cited growing confidence that inflation is returning to the 2% target. India's Sensex gained over 800 points, breaching 88,000 for the first time.\n\n(Source: Reuters, May 22, 2026)",
+author:"International Desk",location:"Washington DC",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*10,
+image:img("stock market wall street finance"),
+lang:"en"},
+
+// ── SPORTS ────────────────────────────────────────────────────────
+{title:"RCB Retain IPL 2026 Title, Defeat Gujarat Titans; Patidar Makes History",
 category:"Sports",section:"Sports",
-excerpt:"16-year-old Vaibhav Sooryavanshi won the IPL 2026 Orange Cap, breaking Sai Sudharsan's record to become the youngest player to claim the batting award in IPL history.",
-body:"16-year-old Vaibhav Sooryavanshi became the youngest Orange Cap winner in IPL history, breaking Sai Sudharsan's record with a sensational batting performance throughout the IPL 2026 season.\n\nSooryavanshi, who made his IPL debut this season with Rajasthan Royals, scored consistently across the tournament with his aggressive, fearless batting style.\n\nCricket commentators across the country hailed the teenager as the future of Indian batting. His performances drew comparisons to a young Sachin Tendulkar for his composure and technique at such a young age.\n\n(Source: Outlook India, June 1, 2026)",
-author:"Sports Desk",location:"Ahmedabad",status:"published",hero:false,breaking:false,
-date:NOW-1000*60*60*20,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Cricket_at_the_2010_Commonwealth_Games.jpg/800px-Cricket_at_the_2010_Commonwealth_Games.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Rishabh Pant Resigns as LSG Captain After Disastrous IPL 2026 Campaign",
+excerpt:"Royal Challengers Bengaluru won back-to-back IPL titles defeating Gujarat Titans. Rajat Patidar becomes third captain to defend the title.",
+body:"Royal Challengers Bengaluru successfully defended their crown by defeating Gujarat Titans in the final at Narendra Modi Stadium, Ahmedabad.\n\nRajat Patidar becomes only the third IPL captain after MS Dhoni and Rohit Sharma to defend the title. Virat Kohli played a blistering 50 off 25 balls.\n\nVaibhav Sooryavanshi clinched the Orange Cap, becoming the youngest Orange Cap winner in IPL history.\n\n(Source: Outlook India, June 1, 2026)",
+author:"Sports Desk",location:"Ahmedabad",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1,
+image:img("cricket IPL stadium match"),
+lang:"en"},
+
+{title:"Sporting Clube de Goa Beat Dempo 5-3 on Penalties in GFA Charity Match",
 category:"Sports",section:"Sports",
-excerpt:"Wicketkeeper-batter Rishabh Pant stepped down as Lucknow Super Giants captain following LSG's poor IPL 2026 season in which they failed to qualify for the playoffs.",
-body:"Wicketkeeper-batter Rishabh Pant stepped down as Lucknow Super Giants captain following the franchise's disastrous IPL 2026 campaign in which they failed to qualify for the playoffs.\n\nLSG finished near the bottom of the points table this season, with a combination of poor batting, inconsistent bowling and several key player injuries contributing to the poor showing.\n\nPant said in a statement that stepping down was the right decision for the team and that he wanted to focus on his batting and wicketkeeping rather than the additional burden of captaincy.\n\nLSG management is expected to announce a new captain for the next season. Former India captain and mentor Gautam Gambhir is reportedly involved in the leadership search.\n\n(Source: Herald Goa / PTI, May 29, 2026)",
-author:"Sports Desk",location:"Lucknow",status:"published",hero:false,breaking:false,
-date:NOW-DAY*3,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Cricket_at_the_2010_Commonwealth_Games.jpg/800px-Cricket_at_the_2010_Commonwealth_Games.jpg",credit:"Image: Unsplash",lang:"en"
-},
-{
-title:"Sakshi Kale Wins Gold and Silver at Indian Open Para Athletics Championship",
+excerpt:"Defending GPL champions Sporting Clube edged rivals Dempo SC 5-3 in a penalty shootout at Duler Stadium, Mapusa, after 1-1 draw.",
+body:"Sporting Clube de Goa edged arch-rivals Dempo SC 5-3 on penalties in the GFA Charity Match at Duler Stadium, Mapusa.\n\nThe match ended 1-1 after regulation time. Charity proceeds go towards GFA's grassroots development programme.\n\n(Source: Herald Goa, June 1, 2026)",
+author:"Sports Desk",location:"Duler Stadium, Mapusa",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*1.5,
+image:img("football match Goa India"),
+lang:"en"},
+
+{title:"Vaibhav Sooryavanshi Becomes Youngest Orange Cap Winner in IPL History",
 category:"Sports",section:"Sports",
-excerpt:"Goa's Sakshi Kale struck gold in the 100m T47 event and silver in the 200m at the Indian Open Para Athletics Championship, cementing her place among India's top para-athletes.",
-body:"Goa's Sakshi Kale put in a stunning performance at the Indian Open Para Athletics Championship, winning gold in the 100m T47 event and silver in the 200m category.\n\nKale's gold medal performance in the 100m was a personal best, clocking 13.42 seconds in the T47 classification. She followed it up with a silver in the 200m, finishing just 0.3 seconds behind the national record holder.\n\nThe 22-year-old from South Goa has rapidly emerged as one of India's most promising para-athletes. She is targeting a berth at the 2028 Los Angeles Paralympics.\n\nGoa Sports Authority has announced a cash award for Kale and called on the state government to increase funding for para-sports infrastructure.\n\n(Source: The Goan, May 28, 2026)",
-author:"Sports Desk",location:"New Delhi",status:"published",hero:false,breaking:false,
-date:NOW-DAY*4,image:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Para_athletics_-_2015_IPC_Athletics_World_Championships_-_Women%27s_long_jump_T44_final_%285%29.jpg/800px-Para_athletics_-_2015_IPC_Athletics_World_Championships_-_Women%27s_long_jump_T44_final_%285%29.jpg",credit:"Image: Unsplash",lang:"en"
-}
+excerpt:"16-year-old Vaibhav Sooryavanshi won IPL 2026 Orange Cap, breaking Sai Sudharsan's record with a sensational batting performance.",
+body:"16-year-old Vaibhav Sooryavanshi became the youngest Orange Cap winner in IPL history with a sensational batting performance throughout IPL 2026.\n\nCricket commentators hailed the teenager as the future of Indian batting, drawing comparisons to a young Sachin Tendulkar.\n\n(Source: Outlook India, June 1, 2026)",
+author:"Sports Desk",location:"Ahmedabad",
+status:"published",hero:false,breaking:false,
+date:NOW-1000*60*60*20,
+image:img("cricket batting young player india"),
+lang:"en"},
+
+{title:"Sakshi Kale Wins Gold and Silver at Indian Open Para Athletics Championship",
+category:"Sports",section:"Sports",
+excerpt:"Goa's Sakshi Kale struck gold in 100m T47 and silver in 200m at Indian Open Para Athletics, cementing her place among India's top para-athletes.",
+body:"Goa's Sakshi Kale put in a stunning performance at the Indian Open Para Athletics Championship, winning gold in the 100m T47 event and silver in the 200m.\n\nThe 22-year-old from South Goa is targeting a berth at the 2028 Los Angeles Paralympics.\n\n(Source: The Goan, May 28, 2026)",
+author:"Sports Desk",location:"New Delhi",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*4,
+image:img("para athletics disabled sports india"),
+lang:"en"},
+
+{title:"Rishabh Pant Resigns as LSG Captain After Disastrous IPL 2026 Campaign",
+category:"Sports",section:"Sports",
+excerpt:"Wicketkeeper-batter Rishabh Pant stepped down as Lucknow Super Giants captain following LSG's poor IPL 2026 season.",
+body:"Rishabh Pant stepped down as Lucknow Super Giants captain following the franchise's disastrous IPL 2026 campaign in which they failed to qualify for the playoffs.\n\nLSG management is expected to announce a new captain for the next season.\n\n(Source: PTI, May 29, 2026)",
+author:"Sports Desk",location:"Lucknow",
+status:"published",hero:false,breaking:false,
+date:NOW-DAY*3,
+image:img("cricket wicketkeeper india match"),
+lang:"en"}
+
 ];
 
-// SITE DATA
 const siteData={
   ticker:[
-    "India seals ₹5,800 crore BrahMos missile deal with Vietnam — Defence Secretary confirms",
-    "RCB retain IPL 2026 title defeating Gujarat Titans; Patidar makes history",
-    "FIFA World Cup 2026 begins: South Africa vs Mexico opens in Los Angeles",
-    "Goa CM Sawant returns from Delhi amid cabinet reshuffle buzz — BJP sources",
+    "India seals ₹5,800 crore BrahMos missile deal with Vietnam",
+    "RCB retain IPL 2026 title defeating Gujarat Titans in Ahmedabad final",
+    "FIFA World Cup 2026 kicks off — South Africa vs Mexico in Los Angeles",
+    "Goa CM Sawant returns from Delhi amid cabinet reshuffle buzz",
     "ED attaches ₹11 crore properties in Birch Health NOC corruption case",
     "Fraudsters steal car and ₹10 lakh valuables in North Goa delivery scam",
     "LPG commercial cylinder up ₹42–₹53 from June 1; domestic prices unchanged",
@@ -284,10 +338,10 @@ const siteData={
   ],
   liveFeed:[
     {time:"11:30",text:"<strong>Breaking:</strong> CM Sawant lands back in Panaji from Delhi. Cabinet reshuffle announcement expected this week.",date:NOW-1000*60*25},
-    {time:"10:45",text:"<strong>Sports:</strong> RCB beat GT in IPL final. Celebrations across Goa! Watch parties lit up Bicholim market last night.",date:NOW-1000*60*70},
-    {time:"09:15",text:"<strong>Goa Police Advisory:</strong> Do not hand over car keys to strangers posing as delivery agents. Report on 100.",date:NOW-1000*60*120},
-    {time:"08:30",text:"<strong>Weather:</strong> IMD yellow alert for North and South Goa — heavy to very heavy rainfall June 3–5. Stay safe.",date:NOW-1000*60*180},
-    {time:"07:55",text:"<strong>FIFA World Cup:</strong> Tournament begins today. India's Goa watch parties announced at major venues.",date:NOW-1000*60*240}
+    {time:"10:45",text:"<strong>Sports:</strong> RCB beat GT in IPL 2026 final. Celebrations across Goa! Watch parties lit up Bicholim market.",date:NOW-1000*60*70},
+    {time:"09:15",text:"<strong>Police Advisory:</strong> Do not hand over car keys to strangers posing as delivery agents. Call 100.",date:NOW-1000*60*120},
+    {time:"08:30",text:"<strong>IMD Alert:</strong> Yellow alert for North and South Goa — heavy rainfall expected June 3–5.",date:NOW-1000*60*180},
+    {time:"07:55",text:"<strong>LPG:</strong> Commercial cylinder up ₹42–₹53 from today. Domestic cylinder prices unchanged.",date:NOW-1000*60*240}
   ],
   events:[
     {date:"2026-06-05",name:"Author Saurabh Mukherjea Talk at ICG",place:"ICG, Panaji"},
@@ -306,49 +360,51 @@ const siteData={
   ],
   weather:{key:"",city:"Bicholim,IN"},
   site:{name:"Update Bicholim",tagline:"Goa's Trusted Local News",wa:"",email:"news@updatebicholim.com"},
-  gallery:[],updatedAt:NOW
+  gallery:[],
+  updatedAt:NOW
 };
 
 window.seedAll=async()=>{
   const btn=document.getElementById('seedBtn');
   btn.disabled=true; btn.textContent='⏳ Adding data…';
   document.getElementById('log').innerHTML='';
-
   try{
-    log('<span class="hd">📰 Adding Goa news articles…</span>');
-    const goaArts=articles.filter(a=>a.section==='Goa');
-    for(const a of goaArts){await addDoc(collection(db,'articles'),a);log(`  ✅ [Goa] ${a.title.substring(0,60)}…`,'ok');}
-
-    log('<span class="hd">🇮🇳 Adding India news articles…</span>');
-    const indArts=articles.filter(a=>a.section==='India');
-    for(const a of indArts){await addDoc(collection(db,'articles'),a);log(`  ✅ [India] ${a.title.substring(0,60)}…`,'ok');}
-
+    log('<span class="hd">📰 Adding Goa news…</span>');
+    for(const a of articles.filter(a=>a.section==='Goa')){
+      await addDoc(collection(db,'articles'),a);
+      log(`✅ [Goa] ${a.title.substring(0,55)}…`,'ok');
+    }
+    log('<span class="hd">🇮🇳 Adding India news…</span>');
+    for(const a of articles.filter(a=>a.section==='India')){
+      await addDoc(collection(db,'articles'),a);
+      log(`✅ [India] ${a.title.substring(0,55)}…`,'ok');
+    }
     log('<span class="hd">🌍 Adding International news…</span>');
-    const intArts=articles.filter(a=>a.section==='International');
-    for(const a of intArts){await addDoc(collection(db,'articles'),a);log(`  ✅ [Intl] ${a.title.substring(0,60)}…`,'ok');}
-
+    for(const a of articles.filter(a=>a.section==='International')){
+      await addDoc(collection(db,'articles'),a);
+      log(`✅ [Intl] ${a.title.substring(0,55)}…`,'ok');
+    }
     log('<span class="hd">⚽ Adding Sports news…</span>');
-    const sptArts=articles.filter(a=>a.section==='Sports');
-    for(const a of sptArts){await addDoc(collection(db,'articles'),a);log(`  ✅ [Sports] ${a.title.substring(0,60)}…`,'ok');}
-
-    log('<span class="hd">📡 Adding ticker, events, classifieds, live feed…</span>');
+    for(const a of articles.filter(a=>a.section==='Sports')){
+      await addDoc(collection(db,'articles'),a);
+      log(`✅ [Sports] ${a.title.substring(0,55)}…`,'ok');
+    }
+    log('<span class="hd">📡 Adding site data…</span>');
     await setDoc(doc(db,'sitedata','main'),siteData,{merge:true});
-    log('  ✅ Ticker (9 headlines)','ok');
-    log('  ✅ Live feed (5 updates)','ok');
-    log('  ✅ Events (6 upcoming)','ok');
-    log('  ✅ Classifieds (5 items)','ok');
-
+    log('✅ Ticker (9 items)','ok');
+    log('✅ Live feed (5 items)','ok');
+    log('✅ Events (6 items)','ok');
+    log('✅ Classifieds (5 items)','ok');
     log('');
-    log('🎉 ALL DONE! '+articles.length+' real news articles added across 4 sections.','ok');
-    log('→ Open your website to see all articles live!','info');
-    log('→ Admin → Weather → paste your API key → Save','info');
-    log('→ Delete this file after testing.','info');
-
-    btn.textContent='✅ Done! Open your website';
+    log(`🎉 DONE! ${articles.length} articles added. Open your website!`,'ok');
+    log('→ Go to Admin → Weather → paste your API key → Save','info');
+    log('→ Delete this file after testing','info');
+    btn.textContent='✅ Done! Open updatebicholim.com';
     btn.style.background='#155724';
   }catch(e){
     log('❌ Error: '+e.message,'err');
-    btn.disabled=false; btn.textContent='🚀 Add All Real News to Website';
+    btn.disabled=false;
+    btn.textContent='🚀 Add All News Articles';
   }
 };
 
@@ -357,7 +413,7 @@ window.clearAll=async()=>{
   log('🗑 Clearing articles…','info');
   try{
     const snap=await getDocs(collection(db,'articles'));
-    for(const d of snap.docs)await deleteDoc(d.ref);
+    for(const d of snap.docs) await deleteDoc(d.ref);
     log(`✅ Deleted ${snap.docs.length} articles. Now click Add.`,'ok');
   }catch(e){log('❌ '+e.message,'err');}
 };
