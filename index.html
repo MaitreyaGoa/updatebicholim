@@ -393,12 +393,12 @@
       <button class="search-btn" onclick="doSearch(document.getElementById('searchInput').value)">🔍</button>
       <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
     </div>
-    <button class="hamburger" id="hamburgerBtn"><span></span><span></span><span></span></button>
+    <button class="hamburger" id="hambBtn"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
-<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileNav()"></div>
-<nav class="mobile-nav" id="mobileNav">
+<div class="mobile-overlay" id="mobOv" onclick="closeMob()"></div>
+<nav class="mobile-nav" id="mobNav">
   <div class="mobile-nav-header"><div class="mobile-logo">UPDATE <span>BICHOLIM</span></div></div>
   <ul class="mobile-nav-links">
     <li><a href="#">🏠 Home</a></li><li><a href="#">🏛 Politics</a></li><li><a href="#">🚨 Crime</a></li>
@@ -411,7 +411,7 @@
 <main>
   <section class="hero-section">
     <div class="container">
-      <div id="heroSection">
+      <div id="heroSec">
         <div class="empty-placeholder"><div class="icon">📰</div>Loading top stories…</div>
       </div>
     </div>
@@ -432,14 +432,14 @@
             <h2 class="section-title">Bicholim Live <span class="live-pulse" style="font-size:10px;"><span class="live-dot"></span> Live</span></h2>
             <a href="#" class="section-link">Full Feed →</a>
           </div>
-          <div id="liveFeedSection">
+          <div id="liveSec">
             <div class="empty-placeholder"><div class="icon">⚡</div>No live updates right now.</div>
           </div>
         </section>
 
         <section style="margin-bottom:40px;">
           <div class="section-header"><h2 class="section-title">More News</h2><a href="#" class="section-link">More →</a></div>
-          <div id="moreNewsList">
+          <div id="moreList">
             <div class="empty-placeholder"><div class="icon">📰</div>No more articles yet.</div>
           </div>
         </section>
@@ -464,7 +464,7 @@
 
         <div class="sidebar-widget">
           <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Trending</h3></div>
-          <div id="trendingList"><div class="empty-placeholder"><div class="icon">📈</div>No trending stories yet.</div></div>
+          <div id="trendList"><div class="empty-placeholder"><div class="icon">📈</div>No trending stories yet.</div></div>
         </div>
 
         <div class="sidebar-widget">
@@ -477,12 +477,12 @@
 
         <div class="sidebar-widget">
           <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Notices & Classifieds</h3></div>
-          <div id="classifiedsSection"><div class="empty-placeholder"><div class="icon">📋</div>No notices yet.</div></div>
+          <div id="clSec"><div class="empty-placeholder"><div class="icon">📋</div>No notices yet.</div></div>
         </div>
 
         <div class="sidebar-widget">
           <div class="section-header" style="margin-bottom:14px;"><h3 class="section-title" style="font-size:18px;">Upcoming Events</h3></div>
-          <div id="eventsSection"><div class="empty-placeholder"><div class="icon">📅</div>No events listed yet.</div></div>
+          <div id="evSec"><div class="empty-placeholder"><div class="icon">📅</div>No events listed yet.</div></div>
         </div>
       </aside>
     </div>
@@ -491,14 +491,14 @@
   <section class="gallery-section">
     <div class="container">
       <div class="section-header"><h2 class="section-title">Photo Gallery</h2><a href="#" class="section-link">View All →</a></div>
-      <div id="gallerySection"><div class="empty-placeholder"><div class="icon">🖼️</div>No gallery photos yet.</div></div>
+      <div id="galSec"><div class="empty-placeholder"><div class="icon">🖼️</div>No gallery photos yet.</div></div>
     </div>
   </section>
 
   <section style="background:var(--gray-50);padding:40px 0;">
     <div class="container">
       <div class="section-header"><h2 class="section-title">Opinion & Analysis</h2><a href="#" class="section-link">All Opinions →</a></div>
-      <div id="opinionSection">
+      <div id="opSec">
         <div class="empty-placeholder"><div class="icon">✍️</div>No opinion pieces yet.</div>
       </div>
     </div>
@@ -586,15 +586,15 @@
   </div>
 </footer>
 
-<div class="notif-bar" id="notifBar">
-  <button class="notif-close" onclick="document.getElementById('notifBar').classList.remove('show')">×</button>
+<div class="notif-bar" id="notif">
+  <button class="notif-close" onclick="document.getElementById('notif').classList.remove('show')">×</button>
   <div style="font-size:20px;">🔔</div>
   <div class="notif-text">
     <h4>Stay Updated — Enable Notifications</h4>
     <p>Get breaking Bicholim news instantly.</p>
     <div class="notif-actions">
-      <button class="notif-allow" onclick="document.getElementById('notifBar').classList.remove('show')">Allow</button>
-      <button class="notif-dismiss" onclick="document.getElementById('notifBar').classList.remove('show')">Not Now</button>
+      <button class="notif-allow" onclick="document.getElementById('notif').classList.remove('show')">Allow</button>
+      <button class="notif-dismiss" onclick="document.getElementById('notif').classList.remove('show')">Not Now</button>
     </div>
   </div>
 </div>
@@ -1172,5 +1172,15 @@ setTimeout(() => {
 }, 500);
 
 </script>
+
+<!-- ARTICLE VIEWER MODAL -->
+<div id="artModal" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;opacity:0;pointer-events:none;transition:opacity .3s;" onclick="if(event.target===this)closeArt()">
+  <div id="artBox" style="background:#fff;width:100%;max-width:660px;overflow:hidden;transform:scale(.97);transition:transform .3s;"></div>
+</div>
+<style>
+#artModal.open{opacity:1;pointer-events:all;}
+#artModal.open #artBox{transform:scale(1);}
+</style>
+
 </body>
 </html>
