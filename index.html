@@ -1147,6 +1147,10 @@ async function loadWeather() {
 
 // ── ARTICLE VIEWER ───────────────────────────────────────────────
 window.openArt = (id) => {
+  window.open(`article.html?id=${id}`, '_blank');
+};
+
+window._openArtModal = (id) => {
   const art = articles.find(a=>a.id===id);
   if (!art) return;
   const artUrl   = `https://www.updatebicholim.com/?article=${id}`;
@@ -1301,7 +1305,7 @@ window.shareArticle = (id, e) => {
   e.stopPropagation();
   const art = articles.find(a=>a.id===id);
   if (!art) return;
-  const url  = `https://www.updatebicholim.com/?article=${id}`;
+  const url  = `https://www.updatebicholim.com/article.html?id=${id}`;
   const text = art.title + ' | Update Bicholim';
   if (navigator.share) {
     navigator.share({ title: art.title, text, url }).catch(()=>{});
