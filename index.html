@@ -20,7 +20,16 @@
     --font-display: 'Playfair Display', Georgia, serif;
     --font-body: 'Source Serif 4', Georgia, serif;
     --font-ui: 'IBM Plex Sans', sans-serif;
-  }
+  
+  /* Short aliases — actual values */
+  --fu: 'IBM Plex Sans', sans-serif;
+  --fd: 'Playfair Display', serif;
+  --g50: #fafafa;
+  --g100: #f0f0f0;
+  --g300: #d0d0d0;
+  --g500: #888888;
+  --g700: #444444;
+}
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body { font-family: var(--font-body); background: var(--white); color: var(--black); overflow-x: hidden; }
@@ -1314,8 +1323,7 @@ window.openPeopleArt = (s) => {
       <div style="font-family:var(--fu);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:7px;">${s.category}</div>
       <h2 style="font-family:var(--fd);font-size:clamp(18px,3vw,24px);font-weight:700;line-height:1.25;margin-bottom:10px;">${s.title}</h2>
       <div style="font-family:var(--fu);font-size:11px;color:var(--g500);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--g100);">📅 ${s.date}${s.time?' at '+s.time:''} · 📍 ${s.location}</div>
-      <div style="font-size:14px;line-height:1.75;color:var(--g700);">${(s.body||'').replace(/
-/g,'<br>')}</div>
+      <div style="font-size:14px;line-height:1.75;color:var(--g700);">${(s.body||'').replace(/\n/g,'<br>')}</div>
       <button onclick="closeArt()" style="margin-top:16px;background:var(--g100);border:none;padding:7px 13px;font-family:var(--fu);font-size:11px;cursor:pointer;border-radius:2px;">✕ Close</button>
     </div>`;
   document.getElementById('artModal').classList.add('open');
