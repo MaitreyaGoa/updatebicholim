@@ -1075,6 +1075,7 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, orderBy, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
 const FB = {
   apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
@@ -1086,7 +1087,8 @@ const FB = {
 };
 
 const app = initializeApp(FB);
-const db  = getFirestore(app);
+const db      = getFirestore(app);
+const storage = getStorage(app);
 
 // Firestore document references
 const SITE_REF  = doc(db, 'sitedata', 'main');    // ticker, live, events, classifieds, weather, site
@@ -1270,8 +1272,17 @@ window.publishArticle = async () => {
   const btn = document.querySelector('#page-add-news .btn-primary');
   btn.disabled = true; btn.textContent = '⏳ Saving…';
   try {
+    // Upload image to Firebase Storage if a file was selected
+    if (_addImgFile) {
+      btn.textContent = '⏳ Uploading image…';
+      const ext = _addImgFile.name.split('.').pop();
+      const storageRef = ref(storage, `articles/new_${Date.now()}.${ext}`);
+      await uploadBytes(storageRef, _addImgFile);
+      art.image = await getDownloadURL(storageRef);
+      _addImgFile = null;
+    }
+    btn.textContent = '⏳ Saving…';
     await addDoc(ARTS_COL, art);
-    // If breaking, also add to ticker
     if (art.breaking) {
       const newTicker = [art.title, ...(siteData.ticker||[])];
       await setDoc(SITE_REF, { ticker: newTicker, updatedAt: Date.now() }, { merge: true });
@@ -1697,12 +1708,14 @@ window.editArticle = (id) => {
   document.getElementById('edit-hero').checked    = !!a.hero;
   document.getElementById('edit-published').checked = a.status === 'published';
 
-  // Show image preview if URL exists
+  // Show image preview if exists
   if (a.image) {
     document.getElementById('edit-img-src').src = a.image;
     document.getElementById('edit-img-preview').style.display = 'block';
+    document.getElementById('edit-upload-area').style.display = 'none';
   } else {
     document.getElementById('edit-img-preview').style.display = 'none';
+    document.getElementById('edit-upload-area').style.display = 'block';
   }
 
   document.getElementById('editModal').classList.add('open');
@@ -1714,6 +1727,38 @@ window.previewEditImg = () => {
   if (!url) return;
   document.getElementById('edit-img-src').src = url;
   document.getElementById('edit-img-preview').style.display = 'block';
+  document.getElementById('edit-upload-area').style.display = 'none';
+};
+
+window.clearEditImg = () => {
+  _editImgFile = null;
+  document.getElementById('edit-image').value = '';
+  document.getElementById('edit-img-preview').style.display = 'none';
+  document.getElementById('edit-upload-area').style.display = 'block';
+  document.getElementById('edit-img-src').src = '';
+};
+
+let _editImgFile = null; // holds the actual File object for upload
+
+window.handleEditImgUpload = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large! Max 5MB.', true); return; }
+  _editImgFile = file; // store file for later upload
+  // Show preview using object URL (fast, no base64)
+  const previewUrl = URL.createObjectURL(file);
+  document.getElementById('edit-img-src').src = previewUrl;
+  document.getElementById('edit-img-preview').style.display = 'block';
+  document.getElementById('edit-upload-area').style.display = 'none';
+  document.getElementById('edit-image').value = ''; // clear URL field — file takes priority
+};
+
+window.handleEditImgDrop = (e) => {
+  e.preventDefault();
+  document.getElementById('edit-upload-area').style.borderColor = 'var(--gray-300)';
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { showToast('Please drop an image file', true); return; }
+  handleEditImgUpload({ files: [file] });
 };
 
 window.closeEditModal = () => {
@@ -1731,7 +1776,7 @@ window.saveEdit = async () => {
     title,
     category,
     section:   document.getElementById('edit-section').value,
-    image:     document.getElementById('edit-image').value.trim(),
+    image:     '__PENDING__', // will be replaced below
     excerpt:   document.getElementById('edit-excerpt').value.trim(),
     body:      document.getElementById('edit-body').value.trim(),
     author:    document.getElementById('edit-author').value.trim() || 'Staff Reporter',
@@ -1746,6 +1791,25 @@ window.saveEdit = async () => {
   saveBtn.textContent = '⏳ Saving…';
 
   try {
+    // If a new image file was selected, upload to Firebase Storage first
+    if (_editImgFile) {
+      saveBtn.textContent = '⏳ Uploading image…';
+      const ext = _editImgFile.name.split('.').pop();
+      const storageRef = ref(storage, `articles/${id}_${Date.now()}.${ext}`);
+      await uploadBytes(storageRef, _editImgFile);
+      const downloadUrl = await getDownloadURL(storageRef);
+      updated.image = downloadUrl;
+      _editImgFile = null;
+    } else {
+      // Use the URL from the text field (or keep existing if blank)
+      const urlField = document.getElementById('edit-image').value.trim();
+      updated.image = urlField || articles.find(a=>a.id===id)?.image || '';
+    }
+
+    // Remove the placeholder
+    delete updated['__PENDING__'];
+
+    saveBtn.textContent = '⏳ Saving…';
     await updateDoc(doc(db, 'articles', id), updated);
     showToast('✅ Article updated successfully!');
     closeEditModal();
@@ -1801,10 +1865,36 @@ window.saveEdit = async () => {
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Image URL</label>
-        <input type="text" id="edit-image" class="form-control" placeholder="https://…">
-        <div id="edit-img-preview" style="margin-top:8px;display:none;"><img id="edit-img-src" style="max-height:160px;max-width:100%;object-fit:cover;border:1px solid #eee;"></div>
-        <button onclick="previewEditImg()" style="margin-top:6px;background:#f0f0f0;border:none;padding:5px 12px;font-size:12px;cursor:pointer;border-radius:2px;">Preview Image</button>
+        <label class="form-label">Article Image</label>
+
+        <!-- Preview -->
+        <div id="edit-img-preview" style="margin-bottom:10px;display:none;position:relative;">
+          <img id="edit-img-src" style="max-height:200px;width:100%;object-fit:cover;border:1px solid #eee;display:block;">
+          <button onclick="clearEditImg()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;padding:3px 8px;font-size:11px;cursor:pointer;border-radius:2px;">✕ Remove</button>
+        </div>
+
+        <!-- Upload from device -->
+        <div id="edit-upload-area" style="border:2px dashed var(--gray-300);border-radius:3px;padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;transition:border-color .2s;"
+          onclick="document.getElementById('edit-img-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
+          ondragleave="this.style.borderColor='var(--gray-300)'"
+          ondrop="handleEditImgDrop(event)">
+          <input type="file" id="edit-img-input" accept="image/*" style="display:none" onchange="handleEditImgUpload(this)">
+          <div style="font-size:24px;margin-bottom:4px;">📷</div>
+          <div style="font-family:var(--font);font-size:12px;color:var(--gray-500);">Click or drag &amp; drop to upload image</div>
+          <div style="font-family:var(--font);font-size:11px;color:var(--gray-300);margin-top:2px;">JPG, PNG, WebP — max 5MB</div>
+        </div>
+
+        <!-- OR paste URL -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+          <span style="font-family:var(--font);font-size:11px;color:var(--gray-400);">or paste URL</span>
+          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="edit-image" class="form-control" placeholder="https://example.com/image.jpg" style="flex:1;" oninput="if(this.value)previewEditImg()">
+          <button onclick="previewEditImg()" style="background:var(--gray-100);border:1px solid var(--gray-300);padding:0 12px;font-size:12px;cursor:pointer;border-radius:2px;white-space:nowrap;">Preview</button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Excerpt</label>
