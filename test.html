@@ -2,472 +2,265 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Update Bicholim — Full Diagnostic</title>
+<title>Live Site Test</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:20px;font-size:13px;}
-h1{color:#fff;font-size:18px;margin-bottom:4px;}
-.sub{color:#888;font-size:12px;margin-bottom:20px;}
-.section{background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:16px;margin-bottom:16px;}
-.section h2{font-size:13px;font-weight:700;margin-bottom:12px;color:#fff;border-bottom:1px solid #333;padding-bottom:8px;}
-.row{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:1px solid #1f1f1f;}
-.row:last-child{border-bottom:none;}
-.label{color:#aaa;flex:1;}
-.val{flex:2;text-align:right;word-break:break-all;}
+body{font-family:monospace;background:#111;color:#eee;padding:20px;font-size:13px;}
+h2{color:#fff;margin:16px 0 8px;}
+.log{background:#1a1a1a;border:1px solid #333;padding:12px;margin-bottom:12px;border-radius:4px;min-height:40px;line-height:2;}
 .ok{color:#4ade80;} .err{color:#f87171;} .warn{color:#fbbf24;} .info{color:#60a5fa;}
-.log{background:#111;border:1px solid #222;border-radius:4px;padding:12px;max-height:300px;overflow-y:auto;margin-top:8px;line-height:1.8;}
-.log div{padding:1px 0;}
-.big{font-size:22px;font-weight:700;text-align:center;padding:12px;border-radius:4px;margin-bottom:8px;}
-.big.ok{background:#052e16;color:#4ade80;}
-.big.err{background:#2d0a0a;color:#f87171;}
-.btn{background:#BB1919;color:#fff;border:none;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;border-radius:4px;margin-right:8px;margin-bottom:8px;}
-.btn:hover{background:#8B0000;}
-.btn.sec{background:#333;}
+button{background:#BB1919;color:#fff;border:none;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;border-radius:3px;margin:4px;}
+button.sec{background:#333;}
 </style>
 </head>
 <body>
-<h1>🔥 Update Bicholim — Full Diagnostic</h1>
-<p class="sub">Tests every layer: Firebase → Firestore → Data → Render</p>
+<h1 style="color:#fff">🔬 Update Bicholim — Live Render Test</h1>
 
-<button class="btn" onclick="runAll()">▶ Run All Tests</button>
-<button class="btn sec" onclick="testRender()">🖥 Test Render Functions</button>
-<button class="btn sec" onclick="location.reload()">↺ Reset</button>
+<h2>Step 1 — Firebase + Weather</h2>
+<button onclick="testWeather()">▶ Test Weather Now</button>
+<div id="wxLog" class="log">Click button…</div>
 
-<div class="section">
-  <h2>📡 1. Firebase Connection</h2>
-  <div id="fbLog" class="log">Click "Run All Tests"…</div>
-</div>
+<h2>Step 2 — Load Articles into THIS page</h2>
+<button onclick="testArticles()">▶ Load Articles</button>
+<div id="artLog" class="log">Click button…</div>
+<div id="artOut" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px;"></div>
 
-<div class="section">
-  <h2>📦 2. Firestore Data</h2>
-  <div id="dataLog" class="log">Waiting…</div>
-</div>
+<h2>Step 3 — Check index.html CSS Variables</h2>
+<button onclick="testCSS()">▶ Fetch & Test index.html CSS</button>
+<div id="cssLog" class="log">Click button…</div>
 
-<div class="section">
-  <h2>🔍 3. Article Analysis</h2>
-  <div id="artLog" class="log">Waiting…</div>
-</div>
-
-<div class="section">
-  <h2>🖥 4. Render Simulation</h2>
-  <div id="renderLog" class="log">Waiting…</div>
-</div>
-
-<div class="section">
-  <h2>🌐 5. Network & Domain</h2>
-  <div id="netLog" class="log">Waiting…</div>
-</div>
-
-<div class="section">
-  <h2>✅ Summary</h2>
-  <div id="summary" class="log">Waiting for tests…</div>
-</div>
+<h2>Step 4 — Render index.html in iframe + grab console</h2>
+<button onclick="testIframe()">▶ Load Site in iframe</button>
+<div id="ifrLog" class="log">Click button…</div>
+<iframe id="fr" style="width:100%;height:500px;border:2px solid #333;margin-top:8px;display:none;"></iframe>
 
 <script type="module">
-const FB_CONFIG = {
-  apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
-  authDomain: "update-bicholim.firebaseapp.com",
-  projectId: "update-bicholim",
-  storageBucket: "update-bicholim.firebasestorage.app",
-  messagingSenderId: "430335270267",
-  appId: "1:430335270267:web:6bd9d92f267f98d10eb1de"
+const FB = {
+  apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+  authDomain:"update-bicholim.firebaseapp.com",
+  projectId:"update-bicholim",
+  storageBucket:"update-bicholim.firebasestorage.app",
+  messagingSenderId:"430335270267",
+  appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"
 };
 
-function log(elId, msg, type='info') {
-  const el = document.getElementById(elId);
-  const d = document.createElement('div');
-  const ts = new Date().toLocaleTimeString();
-  d.innerHTML = `<span style="color:#555">${ts}</span> <span class="${type}">${msg}</span>`;
-  el.appendChild(d);
-  el.scrollTop = el.scrollHeight;
+function log(id,msg,t='info'){
+  const el=document.getElementById(id);
+  el.innerHTML += `<div class="${t}">${new Date().toLocaleTimeString()} ${msg}</div>`;
+  el.scrollTop=el.scrollHeight;
 }
 
-const results = {};
+let _db, _fs;
 
-window.runAll = async () => {
-  // Clear all logs
-  ['fbLog','dataLog','artLog','renderLog','netLog','summary'].forEach(id => {
-    document.getElementById(id).innerHTML = '';
-  });
+async function initFB(){
+  if(_db) return;
+  const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+  const app = getApps().length ? getApps()[0] : initializeApp(FB);
+  const fs = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+  _db = fs.getFirestore(app);
+  _fs = fs;
+}
 
-  await test1_Firebase();
-  await test2_Data();
-  await test3_Articles();
-  await test4_Render();
-  await test5_Network();
-  showSummary();
+// ── WEATHER TEST ─────────────────────────────────────────────────
+window.testWeather = async () => {
+  const L=(m,t)=>log('wxLog',m,t);
+  document.getElementById('wxLog').innerHTML='';
+  await initFB();
+  L('Reading sitedata/main from Firestore…');
+  try {
+    const snap = await _fs.getDoc(_fs.doc(_db,'sitedata','main'));
+    if(!snap.exists()){ L('❌ sitedata/main missing','err'); return; }
+    const data = snap.data();
+    const key = data.weather?.key;
+    const city = data.weather?.city || 'Bicholim,IN';
+    L(`✅ sitedata found. Weather key: ${key?key.substring(0,8)+'...':'NOT SET'}`, key?'ok':'err');
+    L(`City: ${city}`);
+    if(!key){ L('⚠️ Go to Admin → Weather → paste API key → Save','warn'); return; }
+
+    L(`Calling OpenWeatherMap for "${city}"…`);
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric`;
+    const r = await fetch(url);
+    const wx = await r.json();
+    L(`API response code: ${wx.cod}`, wx.cod===200?'ok':'err');
+    if(wx.cod===200){
+      L(`✅ Temperature: ${Math.round(wx.main.temp)}°C`,'ok');
+      L(`✅ Condition: ${wx.weather[0].description}`,'ok');
+      L(`✅ Humidity: ${wx.main.humidity}%`,'ok');
+      L(`✅ Wind: ${Math.round(wx.wind.speed*3.6)} km/h`,'ok');
+      L('🎉 Weather API working perfectly!','ok');
+    } else {
+      L(`❌ API Error: ${wx.message}`,'err');
+      if(wx.cod===401) L('→ API key invalid or not activated yet (takes 2hrs)','warn');
+      if(wx.cod===404) L('→ City not found. Try "Bicholim" or "Panaji,IN"','warn');
+    }
+  } catch(e){ L('❌ Error: '+e.message,'err'); }
 };
 
-// ── TEST 1: Firebase Init ─────────────────────────────────────────
-async function test1_Firebase() {
-  const L = (m,t) => log('fbLog', m, t);
-  L('Testing Firebase module load…');
-
+// ── ARTICLES TEST ─────────────────────────────────────────────────
+window.testArticles = async () => {
+  const L=(m,t)=>log('artLog',m,t);
+  document.getElementById('artLog').innerHTML='';
+  document.getElementById('artOut').innerHTML='';
+  await initFB();
+  L('Fetching articles from Firestore…');
   try {
-    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    L('✅ firebase-app module loaded', 'ok');
+    const snap = await _fs.getDocs(_fs.collection(_db,'articles'));
+    L(`✅ ${snap.size} articles found`,'ok');
+    const arts = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(a=>a.status==='published')
+      .sort((a,b)=>(b.date||0)-(a.date||0));
+    L(`Published: ${arts.length}`,'ok');
 
-    // Check if already initialized
-    const existing = getApps();
-    L(`Existing Firebase apps: ${existing.length}`, existing.length > 0 ? 'warn' : 'info');
+    // Render cards directly here to test CSS works
+    if(arts.length>0){
+      L('Rendering first 6 cards below…','info');
+      const out = document.getElementById('artOut');
+      out.innerHTML = arts.slice(0,6).map(a=>`
+        <div style="background:#1a1a1a;border:1px solid #333;overflow:hidden;cursor:pointer;" onclick="alert('${a.title.substring(0,40)}')">
+          <div style="height:140px;overflow:hidden;background:#333;position:relative;">
+            <img src="${a.image||''}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <span style="position:absolute;top:6px;left:6px;background:#BB1919;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;">${a.category}</span>
+          </div>
+          <div style="padding:10px;">
+            <div style="font-weight:700;font-size:13px;line-height:1.3;margin-bottom:6px;color:#fff;">${a.title.substring(0,60)}…</div>
+            <div style="font-size:11px;color:#888;">${a.section} · ${a.author||'Staff'}</div>
+          </div>
+        </div>
+      `).join('');
+      L('✅ Cards rendered below — if you can see them, Firebase+data is fine','ok');
+      L('→ The issue is in index.html CSS/JS, NOT in Firebase','warn');
+    }
+  } catch(e){ L('❌ '+e.message,'err'); }
+};
 
-    let app;
-    if (existing.length > 0) {
-      app = existing[0];
-      L('Using existing app instance', 'warn');
+// ── CSS TEST ─────────────────────────────────────────────────────
+window.testCSS = async () => {
+  const L=(m,t)=>log('cssLog',m,t);
+  document.getElementById('cssLog').innerHTML='';
+  L('Fetching index.html…');
+  try {
+    const r = await fetch('/index.html?'+Date.now());
+    const html = await r.text();
+    L(`✅ Fetched — ${Math.round(html.length/1024)}KB`,'ok');
+
+    // Check CSS variables defined
+    const vars = ['--red','--black','--white','--gray-100','--font-display','--font-ui','--charcoal'];
+    L('Checking CSS variables:');
+    vars.forEach(v => {
+      const ok = html.includes(v);
+      L(`  ${ok?'✅':'❌'} ${v}`, ok?'ok':'err');
+    });
+
+    // Check critical CSS classes
+    const classes = ['.ncard-title','.ncard-exc','.ncard-meta','.ncat',
+                     '.hero-grid','.hero-title','.lnews-item','.lnews-title',
+                     '.news-grid','.section-header','.empty-state','.op-grid'];
+    L('Checking CSS classes:');
+    const missing = [];
+    classes.forEach(c => {
+      const ok = html.includes(c);
+      if(!ok) missing.push(c);
+      L(`  ${ok?'✅':'❌'} ${c}`, ok?'ok':'err');
+    });
+
+    if(missing.length===0){
+      L('✅ All CSS classes present','ok');
     } else {
-      app = initializeApp(FB_CONFIG);
-      L('✅ New Firebase app initialized', 'ok');
+      L(`❌ MISSING CSS: ${missing.join(', ')}`, 'err');
+      L('→ This is why articles are invisible on the page!','warn');
     }
 
-    const { getFirestore, collection, getDocs, doc, getDoc, query, orderBy, onSnapshot } =
-      await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-    L('✅ firebase-firestore module loaded', 'ok');
+    // Check JS functions exist
+    const fns = ['function renderHero','function renderLatest','function renderMore',
+                 'function renderTrend','function renderOpinion','function renderSection',
+                 'function timeAgo','function loadWeather'];
+    L('Checking JS functions:');
+    fns.forEach(fn => {
+      const ok = html.includes(fn);
+      L(`  ${ok?'✅':'❌'} ${fn}()`, ok?'ok':'err');
+    });
 
-    const db = getFirestore(app);
-    L('✅ Firestore db instance created', 'ok');
+    // Check if CSS vars use --red or --red: 
+    const redDef = html.match(/--red\s*:\s*([^;]+)/);
+    L(`--red value: ${redDef?redDef[1].trim():'NOT FOUND'}`, redDef?'ok':'err');
 
-    // Store globally for other tests
-    window._db = db;
-    window._fs = { collection, getDocs, doc, getDoc, query, orderBy, onSnapshot };
-    results.firebase = true;
+    // Check font variables
+    const fontUI = html.match(/--font-ui\s*:\s*([^;]+)/);
+    const fontDisplay = html.match(/--font-display\s*:\s*([^;]+)/);
+    L(`--font-ui: ${fontUI?fontUI[1].trim():'NOT FOUND'}`, fontUI?'ok':'err');
+    L(`--font-display: ${fontDisplay?fontDisplay[1].trim():'NOT FOUND'}`, fontDisplay?'ok':'err');
 
-    // Test onSnapshot works
-    L('Testing onSnapshot listener…');
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        L('❌ onSnapshot TIMEOUT after 8 seconds — possible rules block', 'err');
-        results.onSnapshot = false;
-        resolve();
-      }, 8000);
+  } catch(e){ L('❌ '+e.message,'err'); }
+};
 
-      const unsub = onSnapshot(
-        doc(db, 'sitedata', 'main'),
-        snap => {
-          clearTimeout(timeout);
-          if (snap.exists()) {
-            L(`✅ onSnapshot working — sitedata/main received`, 'ok');
-            results.onSnapshot = true;
-          } else {
-            L('⚠️ onSnapshot fired but sitedata/main does NOT exist', 'warn');
-            results.onSnapshot = true; // listener works, data missing
-          }
-          unsub();
-          resolve();
-        },
-        err => {
-          clearTimeout(timeout);
-          L(`❌ onSnapshot ERROR: ${err.message}`, 'err');
-          L(`   Code: ${err.code}`, 'err');
-          results.onSnapshot = false;
-          unsub();
-          resolve();
+// ── IFRAME TEST ────────────────────────────────────────────────────
+window.testIframe = () => {
+  const L=(m,t)=>log('ifrLog',m,t);
+  document.getElementById('ifrLog').innerHTML='';
+  const fr = document.getElementById('fr');
+  fr.style.display='block';
+  fr.src = '/index.html?t='+Date.now();
+  L('Loading index.html in iframe…','info');
+
+  // Capture errors via window.onerror on this page (won't work cross-frame same-origin)
+  fr.onload = () => {
+    L('✅ iframe loaded','ok');
+    try {
+      const doc = fr.contentDocument;
+      const win = fr.contentWindow;
+
+      // Inject error monitor
+      const sc = doc.createElement('script');
+      sc.textContent = `
+        var _errs = [];
+        window.onerror = function(msg,src,line,col,err){
+          _errs.push({msg,src:src?.split('/').pop(),line});
+          window.parent.__ifrErr({msg,src:src?.split('/').pop(),line});
+          return true;
+        };
+        window.addEventListener('unhandledrejection', function(e){
+          window.parent.__ifrErr({msg:'Promise rejection: '+e.reason, src:'promise', line:0});
+        });
+        // After 3 seconds report DOM state
+        setTimeout(function(){
+          var hero = document.getElementById('heroSec');
+          var latest = document.getElementById('latestGrid');
+          var artCount = document.querySelectorAll('.ncard').length;
+          window.parent.__ifrReport({
+            heroHTML: hero ? hero.innerHTML.substring(0,300) : 'ELEMENT NOT FOUND',
+            latestHTML: latest ? latest.innerHTML.substring(0,300) : 'ELEMENT NOT FOUND',
+            ncardsFound: artCount,
+            articlesVar: typeof articles !== 'undefined' ? articles.length : 'undefined'
+          });
+        }, 4000);
+      `;
+      doc.head.insertBefore(sc, doc.head.firstChild);
+
+      window.__ifrErr = (e) => {
+        L(`❌ JS ERROR: ${e.msg}`, 'err');
+        L(`   at ${e.src} line ${e.line}`, 'err');
+      };
+      window.__ifrReport = (r) => {
+        L(`--- DOM Report after 4s ---`,'info');
+        L(`ncard elements rendered: ${r.ncardsFound}`, r.ncardsFound>0?'ok':'err');
+        L(`articles variable: ${r.articlesVar}`, r.articlesVar>0?'ok':r.articlesVar===0?'warn':'err');
+        L(`heroSec innerHTML (first 300): ${r.heroHTML}`, r.heroHTML.includes('hero-grid')?'ok':'err');
+        L(`latestGrid innerHTML (first 300): ${r.latestHTML}`, r.latestHTML.includes('ncard')?'ok':'err');
+        if(r.ncardsFound===0){
+          L('❌ NO ncard elements in DOM — renderLatest() not running or failing','err');
         }
-      );
-    });
-
-    // Test articles onSnapshot
-    L('Testing articles onSnapshot…');
-    await new Promise((resolve) => {
-      const timeout = setTimeout(() => {
-        L('❌ Articles onSnapshot TIMEOUT — Firestore rules blocking reads', 'err');
-        results.articlesSnapshot = false;
-        resolve();
-      }, 8000);
-
-      const unsub = onSnapshot(
-        query(collection(db, 'articles'), orderBy('date', 'desc')),
-        snap => {
-          clearTimeout(timeout);
-          L(`✅ Articles onSnapshot works — ${snap.size} documents`, 'ok');
-          results.articlesSnapshot = true;
-          results.articleCount = snap.size;
-          unsub();
-          resolve();
-        },
-        err => {
-          clearTimeout(timeout);
-          L(`❌ Articles onSnapshot ERROR: ${err.message}`, 'err');
-          L(`   Code: ${err.code}`, 'err');
-          if (err.code === 'failed-precondition') {
-            L('   → MISSING FIRESTORE INDEX for orderBy(date)', 'warn');
-            results.missingIndex = true;
-          }
-          if (err.code === 'permission-denied') {
-            L('   → FIRESTORE RULES blocking reads', 'warn');
-          }
-          results.articlesSnapshot = false;
-          unsub();
-          resolve();
+        if(r.articlesVar==='undefined'){
+          L('❌ articles variable not defined — script crashed on load','err');
         }
-      );
-    });
-
-  } catch(e) {
-    L(`❌ FATAL: ${e.message}`, 'err');
-    results.firebase = false;
-  }
-}
-
-// ── TEST 2: Data Check ────────────────────────────────────────────
-async function test2_Data() {
-  const L = (m,t) => log('dataLog', m, t);
-  if (!window._db) { L('❌ Firebase not ready, skipping', 'err'); return; }
-
-  const { collection, getDocs, doc, getDoc } = window._fs;
-  const db = window._db;
-
-  // Test getDocs (no orderBy — no index needed)
-  L('Testing getDocs on articles (no orderBy)…');
-  try {
-    const snap = await getDocs(collection(db, 'articles'));
-    L(`✅ getDocs works — ${snap.size} articles found`, snap.size > 0 ? 'ok' : 'warn');
-    results.getDocs = true;
-    results.articleCountDirect = snap.size;
-
-    if (snap.size === 0) {
-      L('⚠️ NO ARTICLES IN FIRESTORE — seed data not loaded!', 'warn');
+        if(r.articlesVar===0){
+          L('⚠️ articles array is empty — Firestore onSnapshot returned nothing','warn');
+        }
+      };
+      L('✅ Monitor injected — waiting 4 seconds for Firestore to load…','ok');
+    } catch(e){
+      L('⚠️ Could not inject monitor: '+e.message,'warn');
+      L('→ Open F12 Console on main site tab and look for red errors','warn');
     }
-  } catch(e) {
-    L(`❌ getDocs ERROR: ${e.message}`, 'err');
-    results.getDocs = false;
-  }
-
-  // Test sitedata
-  L('Testing sitedata/main…');
-  try {
-    const snap = await getDoc(doc(db, 'sitedata', 'main'));
-    if (snap.exists()) {
-      const data = snap.data();
-      L(`✅ sitedata/main exists`, 'ok');
-      L(`   Keys: ${Object.keys(data).join(', ')}`, 'info');
-      L(`   Ticker: ${data.ticker?.length || 0} items`, data.ticker?.length > 0 ? 'ok' : 'warn');
-      L(`   Weather key: ${data.weather?.key ? 'SET ✅' : 'NOT SET ⚠️'}`, data.weather?.key ? 'ok' : 'warn');
-      results.sitedata = true;
-    } else {
-      L('❌ sitedata/main does NOT exist!', 'err');
-      results.sitedata = false;
-    }
-  } catch(e) {
-    L(`❌ sitedata ERROR: ${e.message}`, 'err');
-  }
-}
-
-// ── TEST 3: Article Analysis ──────────────────────────────────────
-async function test3_Articles() {
-  const L = (m,t) => log('artLog', m, t);
-  if (!window._db) { L('❌ Firebase not ready', 'err'); return; }
-
-  const { collection, getDocs } = window._fs;
-  const db = window._db;
-
-  try {
-    const snap = await getDocs(collection(db, 'articles'));
-    const arts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    L(`Total articles: ${arts.length}`, arts.length > 0 ? 'ok' : 'err');
-
-    // Check status field
-    const published = arts.filter(a => a.status === 'published');
-    const draft = arts.filter(a => a.status === 'draft');
-    const noStatus = arts.filter(a => !a.status);
-    L(`Published: ${published.length}`, published.length > 0 ? 'ok' : 'err');
-    L(`Draft: ${draft.length}`, 'info');
-    L(`Missing status field: ${noStatus.length}`, noStatus.length > 0 ? 'err' : 'ok');
-    if (noStatus.length > 0) L('⚠️ Articles with no status field won\'t show!', 'warn');
-
-    // Check section field
-    const sections = {};
-    arts.forEach(a => {
-      const s = a.section || 'MISSING';
-      sections[s] = (sections[s] || 0) + 1;
-    });
-    L(`Sections: ${JSON.stringify(sections)}`, 'info');
-
-    // Check date field
-    const noDate = arts.filter(a => !a.date);
-    L(`Missing date field: ${noDate.length}`, noDate.length > 0 ? 'warn' : 'ok');
-
-    // Check hero
-    const hero = arts.filter(a => a.hero === true);
-    L(`Hero articles: ${hero.length}`, hero.length > 0 ? 'ok' : 'warn');
-
-    // Sample first article
-    if (arts.length > 0) {
-      const first = arts[0];
-      L(`Sample article fields: ${Object.keys(first).join(', ')}`, 'info');
-      L(`Sample title: "${first.title?.substring(0,50)}…"`, 'info');
-      L(`Sample status: "${first.status}"`, first.status === 'published' ? 'ok' : 'err');
-    }
-
-    results.articlesOk = published.length > 0;
-
-  } catch(e) {
-    L(`❌ ERROR: ${e.message}`, 'err');
-  }
-}
-
-// ── TEST 4: Render Simulation ─────────────────────────────────────
-async function test4_Render() {
-  const L = (m,t) => log('renderLog', m, t);
-
-  // Check if index.html elements exist (we're on test.html, so no)
-  L('Checking key element IDs…', 'info');
-  const ids = ['heroSec','latestGrid','liveSec','moreList','trendList',
-               'clSec','evSec','galSec','opSec','artModal','artBox',
-               'wTemp','wDesc','headerTemp','headerWeatherDesc'];
-  let allOk = true;
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    // These won't exist on test.html — but we check the index.html via fetch
-  });
-  L('(Elements checked on index.html, not test.html)', 'info');
-
-  // Fetch the actual index.html and check IDs
-  L('Fetching index.html to verify IDs…');
-  try {
-    const resp = await fetch('/index.html');
-    const html = await resp.text();
-    L(`✅ index.html fetched — ${Math.round(html.length/1024)}KB`, 'ok');
-
-    // Check old broken IDs still exist
-    const oldIds = ['heroSection','liveFeedSection','moreNewsList','trendingList',
-                    'classifiedsSection','eventsSection','gallerySection','opinionSection'];
-    let oldFound = [];
-    oldIds.forEach(id => { if (html.includes(`id="${id}"`)) oldFound.push(id); });
-
-    if (oldFound.length > 0) {
-      L(`❌ OLD BROKEN IDs STILL IN index.html: ${oldFound.join(', ')}`, 'err');
-      L('   → This is why articles don\'t load! Deploy the fixed file.', 'warn');
-      results.correctIds = false;
-    } else {
-      L('✅ All old broken IDs removed from index.html', 'ok');
-      results.correctIds = true;
-    }
-
-    // Check new correct IDs exist
-    const newIds = ['heroSec','latestGrid','liveSec','moreList','trendList',
-                    'clSec','evSec','galSec','opSec'];
-    let newMissing = [];
-    newIds.forEach(id => { if (!html.includes(`id="${id}"`)) newMissing.push(id); });
-
-    if (newMissing.length > 0) {
-      L(`❌ NEW IDs MISSING from index.html: ${newMissing.join(', ')}`, 'err');
-      results.correctIds = false;
-    } else {
-      L('✅ All required new IDs present in index.html', 'ok');
-    }
-
-    // Check getDocs is imported
-    if (html.includes('getDocs') && html.includes('firebase-firestore')) {
-      L('✅ getDocs properly imported in index.html', 'ok');
-      results.getDocsImported = true;
-    } else {
-      L('❌ getDocs NOT in index.html imports!', 'err');
-      results.getDocsImported = false;
-    }
-
-    // Check for artModal
-    if (html.includes('id="artModal"')) {
-      L('✅ artModal present in index.html', 'ok');
-    } else {
-      L('❌ artModal MISSING from index.html', 'err');
-    }
-
-  } catch(e) {
-    L(`❌ Could not fetch index.html: ${e.message}`, 'err');
-  }
-}
-
-// ── TEST 5: Network ───────────────────────────────────────────────
-async function test5_Network() {
-  const L = (m,t) => log('netLog', m, t);
-
-  L(`Current domain: ${location.hostname}`, 'info');
-  L(`Protocol: ${location.protocol}`, location.protocol === 'https:' ? 'ok' : 'warn');
-  L(`Full URL: ${location.href}`, 'info');
-
-  // Check if we can reach Firebase APIs
-  L('Testing Firebase connectivity…');
-  try {
-    const r = await fetch('https://firestore.googleapis.com/', { method: 'HEAD', mode: 'no-cors' });
-    L('✅ Firebase APIs reachable', 'ok');
-  } catch(e) {
-    L(`⚠️ Firebase connectivity check: ${e.message}`, 'warn');
-  }
-
-  // Check if we're on HTTPS (required for Firebase Auth)
-  if (location.protocol !== 'https:') {
-    L('⚠️ NOT on HTTPS — Firebase may have issues', 'warn');
-  } else {
-    L('✅ HTTPS confirmed', 'ok');
-  }
-}
-
-// ── SUMMARY ───────────────────────────────────────────────────────
-function showSummary() {
-  const L = (m,t) => log('summary', m, t);
-
-  L('═══ DIAGNOSIS ═══', 'info');
-
-  if (results.correctIds === false) {
-    L('🔴 CRITICAL: OLD index.html still deployed on server!', 'err');
-    L('   Fix: Push the fixed index.html to GitHub and wait 2 min', 'warn');
-  } else if (results.correctIds === true) {
-    L('✅ index.html: Correct version deployed', 'ok');
-  }
-
-  if (results.getDocsImported === false) {
-    L('🔴 CRITICAL: getDocs not imported in index.html', 'err');
-    L('   Fix: Push latest index.html', 'warn');
-  }
-
-  if (results.articlesSnapshot === false && results.missingIndex) {
-    L('🔴 CRITICAL: Missing Firestore composite index for orderBy(date)', 'err');
-    L('   Fix: Firebase Console → Firestore → Indexes → Create:', 'warn');
-    L('   Collection: articles | Field: date | Order: Descending', 'warn');
-  }
-
-  if (results.articlesSnapshot === false && !results.missingIndex) {
-    L('🔴 CRITICAL: Firestore rules blocking reads', 'err');
-    L('   Fix: Firebase → Firestore → Rules → allow read: if true', 'warn');
-  }
-
-  if (results.articleCountDirect === 0) {
-    L('🔴 NO ARTICLES in Firestore — run seed-data.html!', 'err');
-  } else if (results.articleCountDirect > 0) {
-    L(`✅ ${results.articleCountDirect} articles in Firestore`, 'ok');
-  }
-
-  if (!results.sitedata) {
-    L('🔴 sitedata/main missing — run seed-data.html!', 'err');
-  } else {
-    L('✅ sitedata/main present', 'ok');
-  }
-
-  if (results.articlesOk) {
-    L('✅ Published articles exist and have correct fields', 'ok');
-  }
-
-  L('', 'info');
-  L('═══ WHAT TO DO ═══', 'info');
-  if (results.correctIds === false) {
-    L('STEP 1: Push the fixed index.html → git add . && git commit -m fix && git push', 'warn');
-    L('STEP 2: Wait 2 minutes, hard refresh with Ctrl+Shift+R', 'warn');
-    L('STEP 3: Run this test again to confirm', 'warn');
-  } else if (results.articlesSnapshot === false) {
-    L('STEP 1: Go to Firebase Console → Firestore → Rules', 'warn');
-    L('STEP 2: Set: allow read: if true; allow write: if true;', 'warn');
-    L('STEP 3: Click Publish, then hard refresh site', 'warn');
-  } else {
-    L('🎉 Everything looks good! Articles should be visible.', 'ok');
-    L('If still not showing: Ctrl+Shift+R to hard refresh', 'info');
-  }
-}
-
-window.testRender = () => {
-  log('renderLog', 'Running render test…', 'info');
-  test4_Render().then(showSummary);
+  };
 };
 </script>
 </body>
