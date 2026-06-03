@@ -346,7 +346,7 @@ img{display:block;max-width:100%;}
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import{getFirestore,collection,addDoc,query,where,orderBy,getDocs,doc,updateDoc,getDoc,setDoc,serverTimestamp,increment}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import{getStorage,ref,uploadBytes,getDownloadURL}from'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+// Images uploaded via Cloudinary (free, no Firebase Storage plan needed)
 
 // ▶ REPLACE with your Firebase config
 const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-bicholim.firebaseapp.com",projectId:"update-bicholim",storageBucket:"update-bicholim.firebasestorage.app",messagingSenderId:"430335270267",appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"};
@@ -354,7 +354,9 @@ const cfg={apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",authDomain:"update-b
 const app=initializeApp(cfg);
 const auth=getAuth(app);
 const db=getFirestore(app);
-const st=getStorage(app);
+// Cloudinary config
+const CLOUDINARY_CLOUD = 'dlhyg79xl'; // ← your cloud name
+const CLOUDINARY_PRESET = 'news_unsigned';  // ← your upload preset
 const prov=new GoogleAuthProvider();
 
 let user=null,selfieB64=null,mediaFs=[];let camStream=null;
@@ -399,12 +401,16 @@ window.submitStory=async()=>{
   btn.disabled=true;btn.textContent='⏳ Uploading…';
   document.getElementById('submit-status').textContent='Uploading files, please wait…';
   try{
-    const blob=await fetch(selfieB64).then(r=>r.blob());
-    const sref=ref(st,`selfies/${user.uid}/${Date.now()}.jpg`);
-    await uploadBytes(sref,blob);
-    const selfieURL=await getDownloadURL(sref);
+    // Upload selfie to Cloudinary
+    const selfieBlob = await fetch(selfieB64).then(r=>r.blob());
+    const selfieURL = await uploadToCloudinary(selfieBlob, 'selfies');
+    
+    // Upload media files to Cloudinary
     const media=[];
-    for(const f of mediaFs){const fr=ref(st,`submissions/${user.uid}/${Date.now()}_${f.name}`);await uploadBytes(fr,f);const url=await getDownloadURL(fr);media.push({url,type:f.type.startsWith('image/')?'image':'video',name:f.name});}
+    for(const f of mediaFs){
+      const url = await uploadToCloudinary(f, 'submissions');
+      media.push({url, type:f.type.startsWith('image/')?'image':'video', name:f.name});
+    }
     await addDoc(collection(db,'submissions'),{uid:user.uid,reporterName:name,reporterEmail:user.email,reporterPhoto:user.photoURL||'',selfieURL,title,category:cat,date,time:document.getElementById('f-time').value,location:loc,body,contact:document.getElementById('f-contact').value,media,status:'pending',submittedAt:serverTimestamp()});
     await updateDoc(doc(db,'users',user.uid),{submittedCount:increment(1)});
     toast('✅ Story submitted! Review within 24 hours.');
@@ -413,6 +419,20 @@ window.submitStory=async()=>{
   }catch(e){toast('Failed: '+e.message,'error');}
   finally{btn.disabled=false;btn.textContent='🚀 Submit Story for Review';document.getElementById('submit-status').textContent='';}
 };
+
+
+async function uploadToCloudinary(file, folder='uploads') {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  fd.append('folder', `updatebicholim/${folder}`);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`, {
+    method: 'POST', body: fd
+  });
+  if (!res.ok) throw new Error('Image upload failed');
+  const data = await res.json();
+  return data.secure_url;
+}
 
 function clearForm(){['f-title','f-cat','f-date','f-loc','f-body','f-time','f-contact'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-agree').checked=false;selfieB64=null;mediaFs=[];document.getElementById('media-prev').innerHTML='';retakeSelfie();}
 
