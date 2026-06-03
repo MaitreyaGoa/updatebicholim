@@ -52,8 +52,47 @@ const NOW=Date.now();
 
 // Reliable Unsplash image helper
 function img(kw){
-  // Use loremflickr.com - free, keyword-based, reliable
-  return `https://loremflickr.com/800/500/${encodeURIComponent(kw.split(' ').slice(0,2).join(','))}?lock=${Math.abs(kw.split('').reduce((a,c)=>a+c.charCodeAt(0),0))}`;
+  // Topic-matched stable Unsplash photos
+  const map = {
+    'india politics government building panaji': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=75',
+    'electric bus city transport': 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=75',
+    'bus accident road': 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=75',
+    'fraud scam police investigation': 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=75',
+    'highway road construction india': 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=75',
+    'tax revenue business finance india': 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=75',
+    'school students classroom india': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=75',
+    'enforcement law court india': 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=75',
+    'LPG gas cylinder kitchen': 'https://images.unsplash.com/photo-1614849963640-9cc74b2a826f?w=800&q=75',
+    'bridge river construction india': 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=75',
+    'waste management environment clean': 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=75',
+    'goa panaji cityscape india': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=75',
+    'goa panaji development cityscape': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=75',
+    'missile defence india military': 'https://images.unsplash.com/photo-1569974507005-6dc61f97fb5c?w=800&q=75',
+    'india air force fighter jet military': 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=75',
+    'india finance economy growth': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=75',
+    'supreme court india law justice': 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&q=75',
+    'india housing apartments urban city': 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=75',
+    'football stadium champions league trophy': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=75',
+    'cricket IPL stadium match': 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=75',
+    'cricket batting young player india': 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=75',
+    'cricket wicketkeeper india match': 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&q=75',
+    'para athletics disabled sports india': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=75',
+    'football match Goa India': 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=75',
+    'FIFA world cup football stadium': 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=75',
+    'climate change environment global warming': 'https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=800&q=75',
+    'middle east peace diplomacy': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=75',
+    'stock market wall street finance': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=75',
+    'education exam students india': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=75',
+    'india politics government karnataka': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=75',
+    'india trade agriculture technology': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=75',
+    'united nations diplomacy international law': 'https://images.unsplash.com/photo-1569974507005-6dc61f97fb5c?w=800&q=75',
+    'india oil energy petroleum economy': 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=75',
+    'india summer heatwave climate heat': 'https://images.unsplash.com/photo-1561361058-c24cecae35ca?w=800&q=75',
+    'india university students entrance exam': 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=75',
+    'india australia trade agriculture': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&q=75',
+  };
+  return map[kw] || `https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=75`;
+}?lock=${Math.abs(kw.split('').reduce((a,c)=>a+c.charCodeAt(0),0))}`;
 }
 
 function log(m,t='info'){
@@ -814,13 +853,13 @@ const siteData={
   weather:{key:"",city:"Bicholim,IN"},
   site:{name:"Update Bicholim",tagline:"Goa's Trusted Local News",wa:"",email:"news@updatebicholim.com"},
   gallery:[
-    {src:"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mayem_Lake_Goa.jpg/800px-Mayem_Lake_Goa.jpg",caption:"Mayem Lake, Bicholim — Goa's serene freshwater lake"},
-    {src:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Olectra_K9_electric_bus_of_Kadamba_Transport_Corporation_Goa.jpg/800px-Olectra_K9_electric_bus_of_Kadamba_Transport_Corporation_Goa.jpg",caption:"Kadamba Electric Bus — Goa's green transport initiative"},
-    {src:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Bicholim_town.jpg/800px-Bicholim_town.jpg",caption:"Bicholim Town — heart of North Goa's taluka"},
-    {src:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NH-17_Goa.jpg/800px-NH-17_Goa.jpg",caption:"NH-66 Goa — highway development in progress"},
-    {src:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Goa_Sao_Joao_Festival.jpg/800px-Goa_Sao_Joao_Festival.jpg",caption:"Sao João Festival — Goa's beloved monsoon celebration"},
-    {src:"https://loremflickr.com/800/500/goa,india,nature?lock=101",caption:"Lush monsoon greens of Bicholim taluka"},
-    {src:"https://loremflickr.com/800/500/temple,goa?lock=202",caption:"Ancient temple, Bicholim — Goa's spiritual heritage"}
+    {src:"https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=75",caption:"Panaji, Goa — the state capital on the Mandovi river"},
+    {src:"https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=800&q=75",caption:"Kadamba Electric Bus — Goa's green transport initiative"},
+    {src:"https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=75",caption:"NH-66 Goa — road development in North Goa"},
+    {src:"https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=800&q=75",caption:"Goa's monsoon season — nature at its lushest"},
+    {src:"https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=75",caption:"Duler Stadium, Mapusa — football fever in Goa"},
+    {src:"https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=75",caption:"Students at a Goa government school — education matters"},
+    {src:"https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&q=75",caption:"Clean Goa initiative — community waste management"}
   ],
   updatedAt:Date.now()
 };
