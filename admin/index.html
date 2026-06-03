@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Update Bicholim — News Admin Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
@@ -580,9 +580,70 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 #editModal .form-control { width:100%; padding:8px 10px; border:1px solid var(--gray-300); font-family:var(--font); font-size:13px; border-radius:2px; outline:none; box-sizing:border-box; }
 #editModal .form-control:focus { border-color:var(--red); }
 #editModal select.form-control { height:36px; }
-@media(max-width:600px){
-  #editModal { padding:0 !important; align-items:flex-end !important; }
-  #editModal > div { border-radius:12px 12px 0 0 !important; max-height:92vh; overflow-y:auto; }
+/* ── MOBILE ADMIN ── */
+@media(max-width:768px){
+  .edit-grid-2col { grid-template-columns:1fr !important; }
+  #edit-btn-row { flex-direction:column; }
+  #edit-btn-row .btn { width:100% !important; justify-content:center; }
+
+  /* Main layout */
+  .main { margin-left:0 !important; }
+  .topbar { padding:0 12px; }
+  .page { padding:14px 12px 32px; }
+  
+  /* Stats */
+  .stats-row { grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .stat-card { padding:12px; }
+  .stat-value { font-size:22px; }
+  
+  /* Forms */
+  .form-row { grid-template-columns:1fr !important; }
+  .form-group { margin-bottom:12px; }
+  .form-control { font-size:16px !important; } /* prevents iOS zoom */
+  select.form-control { font-size:16px !important; }
+  textarea.form-control { font-size:16px !important; min-height:100px; }
+  
+  /* Tables */
+  .news-table { font-size:12px; }
+  .news-table th:nth-child(1), .news-table td:nth-child(1) { display:none; }
+  
+  /* Card headers */
+  .card-header { flex-direction:column; align-items:flex-start; gap:8px; }
+  
+  /* Edit modal - slide up from bottom */
+  #editModal { 
+    padding:0 !important; 
+    align-items:flex-end !important; 
+  }
+  #editModal > div { 
+    border-radius:16px 16px 0 0 !important; 
+    max-height:95vh; 
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  #editModal > div > div:last-child { 
+    padding:16px 16px 32px !important; 
+  }
+  #editModal > div > div:last-child > div[style*="grid"] {
+    grid-template-columns:1fr !important;
+  }
+  
+  /* Edit modal buttons */
+  #editModal .btn { 
+    padding:14px 12px !important; 
+    font-size:14px !important;
+    min-height:48px; /* better touch target */
+  }
+  
+  /* Upload area */
+  #edit-upload-area { padding:20px 12px; }
+}
+
+@media(max-width:480px){
+  .stats-row { grid-template-columns:1fr 1fr; gap:6px; }
+  .stat-value { font-size:20px; }
+  .topbar-title { font-size:13px; }
+  .card-body { padding:12px; }
 }
 </style>
 </head>
@@ -1738,7 +1799,9 @@ window.editArticle = (id) => {
     document.getElementById('edit-upload-area').style.display = 'block';
   }
 
-  document.getElementById('editModal').classList.add('open');
+  const modal = document.getElementById('editModal');
+  modal.classList.add('open');
+  modal.scrollTop = 0; // scroll to top on open
   document.body.style.overflow = 'hidden';
 };
 
@@ -1844,7 +1907,7 @@ window.saveEdit = async () => {
     title,
     category,
     section:   document.getElementById('edit-section').value,
-    image:     '__PENDING__', // will be replaced below
+    image:     '', // set below
     excerpt:   document.getElementById('edit-excerpt').value.trim(),
     body:      document.getElementById('edit-body').value.trim(),
     author:    document.getElementById('edit-author').value.trim() || 'Staff Reporter',
@@ -1877,8 +1940,6 @@ window.saveEdit = async () => {
       const urlField = document.getElementById('edit-image').value.trim();
       updated.image = urlField || articles.find(a=>a.id===id)?.image || '';
     }
-    delete updated['__PENDING__'];
-
     saveBtn.textContent = '⏳ Saving…';
     await updateDoc(doc(db, 'articles', id), updated);
     showToast('✅ Article updated successfully!');
@@ -1967,12 +2028,12 @@ async function uploadImageToStorage(file, path, progressCb) {
       <button onclick="closeEditModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
     </div>
     <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
-      <input type="hidden" id="edit-id">
+      <input type="hidden" id="edit-id" autocomplete="off">
       <div class="form-group">
         <label class="form-label">Headline *</label>
-        <input type="text" id="edit-title" class="form-control" placeholder="Article headline…">
+        <input type="text" id="edit-title" class="form-control" placeholder="Article headline…" autocomplete="off" inputmode="text">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="edit-grid-2col">
         <div class="form-group">
           <label class="form-label">Category *</label>
           <select id="edit-category" class="form-control">
@@ -2040,7 +2101,7 @@ async function uploadImageToStorage(file, path, progressCb) {
         <label class="form-label">Full Article Body</label>
         <textarea id="edit-body" class="form-control" rows="10" placeholder="Full article text…" style="font-size:13px;line-height:1.6;min-height:200px;resize:vertical;"></textarea>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="edit-grid-2col">
         <div class="form-group">
           <label class="form-label">Author</label>
           <input type="text" id="edit-author" class="form-control" placeholder="Staff Reporter">
@@ -2061,7 +2122,7 @@ async function uploadImageToStorage(file, path, progressCb) {
           <input type="checkbox" id="edit-published"> 🟢 Published
         </label>
       </div>
-      <div style="display:flex;gap:10px;padding-top:8px;border-top:1px solid #eee;">
+      <div style="display:flex;gap:10px;padding-top:8px;border-top:1px solid #eee;" id="edit-btn-row">
         <button onclick="saveEdit()" class="btn btn-primary" style="flex:1;">💾 Save Changes</button>
         <button onclick="closeEditModal()" class="btn" style="background:#f0f0f0;color:#333;">Cancel</button>
       </div>
