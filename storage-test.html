@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Storage Test</title>
+<style>
+body{font-family:monospace;background:#111;color:#eee;padding:20px;}
+.ok{color:#4ade80;} .err{color:#f87171;} .info{color:#60a5fa;}
+.log{background:#1a1a1a;padding:14px;border-radius:4px;line-height:2;margin-top:12px;}
+button{background:#BB1919;color:#fff;border:none;padding:10px 20px;cursor:pointer;font-size:14px;border-radius:3px;margin:4px;}
+input[type=file]{color:#eee;margin:10px 0;display:block;}
+</style>
+</head>
+<body>
+<h2 style="color:#fff">🔥 Firebase Storage Test</h2>
+<div id="log" class="log">Click a test below…</div>
+
+<h3 style="color:#fff;margin-top:20px;">Test 1 — Rules Check</h3>
+<button onclick="testRules()">▶ Test Storage Rules</button>
+
+<h3 style="color:#fff;margin-top:20px;">Test 2 — Upload Real File</h3>
+<input type="file" id="testFile" accept="image/*">
+<button onclick="testUpload()">▶ Upload Test Image</button>
+
+<script type="module">
+const FB = {
+  apiKey:"AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
+  authDomain:"update-bicholim.firebaseapp.com",
+  projectId:"update-bicholim",
+  storageBucket:"update-bicholim.firebasestorage.app",
+  messagingSenderId:"430335270267",
+  appId:"1:430335270267:web:6bd9d92f267f98d10eb1de"
+};
+
+function log(m,t='info'){
+  const el=document.getElementById('log');
+  el.innerHTML+=`<div class="${t}">${new Date().toLocaleTimeString()} — ${m}</div>`;
+}
+
+let storage;
+
+async function init(){
+  if(storage) return storage;
+  const {initializeApp,getApps}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+  const app=getApps().length?getApps()[0]:initializeApp(FB);
+  const {getStorage}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+  storage=getStorage(app);
+  log('✅ Firebase Storage initialized','ok');
+  log(`Bucket: ${storage.app.options.storageBucket}`,'info');
+  return storage;
+}
+
+window.testRules = async () => {
+  document.getElementById('log').innerHTML='';
+  log('Testing Firebase Storage rules…');
+  try {
+    const st = await init();
+    const {ref,uploadString,getDownloadURL,deleteObject}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+    
+    log('Attempting to upload a tiny test file…');
+    const testRef = ref(st, 'test/rules-check.txt');
+    
+    const startTime = Date.now();
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT after 10s — Storage rules are blocking writes')),10000));
+    
+    await Promise.race([
+      uploadString(testRef, 'rules-test-'+Date.now()),
+      timeout
+    ]);
+    
+    const elapsed = Date.now()-startTime;
+    log(`✅ Upload SUCCESS in ${elapsed}ms`,'ok');
+    
+    const url = await getDownloadURL(testRef);
+    log(`✅ Download URL obtained: ${url.substring(0,60)}…`,'ok');
+    
+    await deleteObject(testRef);
+    log('✅ Test file deleted','ok');
+    log('🎉 Storage rules are WORKING correctly!','ok');
+    log('→ The slow upload issue is likely file size or network','info');
+    
+  } catch(e){
+    log(`❌ FAILED: ${e.message}`,'err');
+    if(e.message.includes('TIMEOUT')){
+      log('→ Go to Firebase Console → Storage → Rules','err');
+      log('→ Set: allow read, write: if true; → Publish','err');
+    } else if(e.message.includes('unauthorized') || e.message.includes('permission')){
+      log('→ Storage rules are blocking writes','err');
+      log('→ Firebase Console → Storage → Rules → allow write: if true','err');
+    } else if(e.message.includes('bucket') || e.message.includes('not found')){
+      log('→ Storage bucket not initialized!','err');
+      log('→ Firebase Console → Storage → Click "Get Started"','err');
+    }
+  }
+};
+
+window.testUpload = async () => {
+  const fileInput = document.getElementById('testFile');
+  if(!fileInput.files[0]){ log('Please select a file first','err'); return; }
+  
+  document.getElementById('log').innerHTML='';
+  const file = fileInput.files[0];
+  log(`File: ${file.name} (${Math.round(file.size/1024)}KB, ${file.type})`);
+  
+  try {
+    const st = await init();
+    const {ref,uploadBytes,getDownloadURL}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+    
+    log('Starting upload…');
+    const t0 = Date.now();
+    const storageRef = ref(st, `test/upload-test-${Date.now()}.${file.name.split('.').pop()}`);
+    
+    // Progress tracking via upload task
+    const {uploadBytesResumable}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+    
+    await new Promise((resolve, reject) => {
+      const task = uploadBytesResumable(storageRef, file);
+      
+      task.on('state_changed',
+        snap => {
+          const pct = Math.round(snap.bytesTransferred/snap.totalBytes*100);
+          const elapsed = Date.now()-t0;
+          log(`📤 Progress: ${pct}% (${snap.bytesTransferred}/${snap.totalBytes} bytes) — ${elapsed}ms`,'info');
+        },
+        err => reject(err),
+        () => resolve(task.snapshot)
+      );
+      
+      // 30s timeout
+      setTimeout(()=>reject(new Error('Upload timed out after 30 seconds')), 30000);
+    });
+    
+    const elapsed = Date.now()-t0;
+    log(`✅ Upload complete in ${elapsed}ms`,'ok');
+    
+    const url = await getDownloadURL(storageRef);
+    log(`✅ URL: ${url.substring(0,80)}…`,'ok');
+    log(`<img src="${url}" style="max-width:200px;max-height:100px;margin-top:8px;display:block;">`, 'ok');
+    
+  } catch(e){
+    log(`❌ Upload failed: ${e.message}`,'err');
+    if(e.message.includes('unauthorized')||e.message.includes('permission')){
+      log('→ Firebase Storage rules blocking upload','err');
+      log('→ Firebase Console → Storage → Rules → allow write: if true','err');
+    }
+  }
+};
+</script>
+</body>
+</html>
