@@ -577,6 +577,13 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 
 /* Edit Modal */
 #editModal.open { opacity:1 !important; pointer-events:all !important; }
+#editModal .form-control { width:100%; padding:8px 10px; border:1px solid var(--gray-300); font-family:var(--font); font-size:13px; border-radius:2px; outline:none; box-sizing:border-box; }
+#editModal .form-control:focus { border-color:var(--red); }
+#editModal select.form-control { height:36px; }
+@media(max-width:600px){
+  #editModal { padding:0 !important; align-items:flex-end !important; }
+  #editModal > div { border-radius:12px 12px 0 0 !important; max-height:92vh; overflow-y:auto; }
+}
 </style>
 </head>
 <body>
@@ -760,7 +767,7 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
             <input type="file" accept="image/*" id="imgInput" onchange="handleImgUpload(this)">
             <div class="upload-icon">📸</div>
             <div class="upload-text">Click or drag & drop image here</div>
-            <div class="upload-sub">Supports JPG, PNG, WebP — max 5MB. Images are stored as base64.</div>
+            <div class="upload-sub">Supports JPG, PNG, WebP — Supports JPG, PNG, WebP — max 15MB. Auto-compressed before upload.</div>
           </div>
           <div class="img-preview" id="imgPreview">
             <img id="imgPreviewSrc" src="" alt="Preview">
@@ -870,7 +877,7 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
           <input type="file" accept="image/*" multiple id="galleryInput" onchange="handleGalleryUpload(this)">
           <div class="upload-icon">🗂️</div>
           <div class="upload-text">Click to upload gallery photos (select multiple)</div>
-          <div class="upload-sub">JPG, PNG — max 5MB each</div>
+          <div class="upload-sub">JPG, PNG — max 15MB each</div>
         </div>
         <div class="gallery-admin-grid" id="galleryGrid"></div>
         <div class="btn-row" style="margin-top:16px;">
@@ -1075,7 +1082,7 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, deleteDoc, query, orderBy, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+// Firebase Storage removed — using Cloudinary free tier instead
 
 const FB = {
   apiKey: "AIzaSyCS0cxLKEV3McuFPYw6z4TP3HOjq738wo4",
@@ -1088,7 +1095,7 @@ const FB = {
 
 const app = initializeApp(FB);
 const db      = getFirestore(app);
-const storage = getStorage(app);
+// storage removed — using Cloudinary
 
 // Firestore document references
 const SITE_REF  = doc(db, 'sitedata', 'main');    // ticker, live, events, classifieds, weather, site
@@ -1228,7 +1235,7 @@ function refreshDashboard() {
 window.handleImgUpload = (input) => {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5*1024*1024) { showToast('Image too large! Max 5MB.', true); return; }
+  if (file.size > 15*1024*1024) { showToast('Image too large! Max 15MB.', true); return; }
   const reader = new FileReader();
   reader.onload = e => {
     currentImg = e.target.result;
@@ -1274,12 +1281,19 @@ window.publishArticle = async () => {
   try {
     // Upload image to Firebase Storage if a file was selected
     if (_addImgFile) {
-      btn.textContent = '⏳ Uploading image…';
-      const ext = _addImgFile.name.split('.').pop();
-      const storageRef = ref(storage, `articles/new_${Date.now()}.${ext}`);
-      await uploadBytes(storageRef, _addImgFile);
-      art.image = await getDownloadURL(storageRef);
-      _addImgFile = null;
+      try {
+        const url = await uploadImageToStorage(
+          _addImgFile,
+          `articles/new_${Date.now()}.jpg`,
+          (pct, msg) => { btn.textContent = `⏳ ${msg}`; }
+        );
+        art.image = url;
+        _addImgFile = null;
+      } catch(uploadErr) {
+        showToast('❌ ' + uploadErr.message, true);
+        btn.disabled = false; btn.textContent = '🚀 Publish Article';
+        return;
+      }
     }
     btn.textContent = '⏳ Saving…';
     await addDoc(ARTS_COL, art);
@@ -1708,6 +1722,12 @@ window.editArticle = (id) => {
   document.getElementById('edit-hero').checked    = !!a.hero;
   document.getElementById('edit-published').checked = a.status === 'published';
 
+  // Reset broken image warning
+  const brokenDiv = document.getElementById('edit-img-broken');
+  if (brokenDiv) brokenDiv.style.display = 'none';
+  const imgEl = document.getElementById('edit-img-src');
+  if (imgEl) imgEl.style.display = 'block';
+
   // Show image preview if exists
   if (a.image) {
     document.getElementById('edit-img-src').src = a.image;
@@ -1732,25 +1752,73 @@ window.previewEditImg = () => {
 
 window.clearEditImg = () => {
   _editImgFile = null;
+  window._editImgFiles = null;
   document.getElementById('edit-image').value = '';
   document.getElementById('edit-img-preview').style.display = 'none';
   document.getElementById('edit-upload-area').style.display = 'block';
   document.getElementById('edit-img-src').src = '';
+  const picker = document.getElementById('edit-img-picker');
+  if(picker) picker.remove();
 };
 
-let _editImgFile = null; // holds the actual File object for upload
+let _editImgFile = null; // holds the chosen File object for upload
 
 window.handleEditImgUpload = (input) => {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Image too large! Max 5MB.', true); return; }
-  _editImgFile = file; // store file for later upload
-  // Show preview using object URL (fast, no base64)
-  const previewUrl = URL.createObjectURL(file);
-  document.getElementById('edit-img-src').src = previewUrl;
+  const files = Array.from(input.files).filter(f => f.size <= 15*1024*1024);
+  if (!files.length) return;
+
+  if (files.length === 1) {
+    // Single file — show preview directly
+    _editImgFile = files[0];
+    document.getElementById('edit-img-src').src = URL.createObjectURL(files[0]);
+    document.getElementById('edit-img-src').style.display = 'block';
+    const brk = document.getElementById('edit-img-broken');
+    if(brk) brk.style.display='none';
+    document.getElementById('edit-img-preview').style.display = 'block';
+    document.getElementById('edit-upload-area').style.display = 'none';
+    document.getElementById('edit-image').value = '';
+    // Remove any existing picker
+    const old = document.getElementById('edit-img-picker');
+    if(old) old.remove();
+  } else {
+    // Multiple files — show grid to pick one
+    const old = document.getElementById('edit-img-picker');
+    if(old) old.remove();
+    const picker = document.createElement('div');
+    picker.id = 'edit-img-picker';
+    picker.style.cssText = 'margin:8px 0;padding:12px;background:#f8f8f8;border:1px solid #eee;border-radius:3px;';
+    picker.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:8px;color:#555;">📸 Select the best image (${files.length} selected):</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;">
+        ${files.map((f,i)=>`
+          <div onclick="pickEditImg(${i})" style="cursor:pointer;border:2px solid transparent;border-radius:3px;overflow:hidden;transition:border-color .15s;" id="edit-pick-${i}">
+            <img src="${URL.createObjectURL(f)}" style="width:100%;height:90px;object-fit:cover;display:block;">
+            <div style="font-size:10px;padding:3px 4px;color:#666;background:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${f.name}</div>
+          </div>`).join('')}
+      </div>`;
+    document.getElementById('edit-upload-area').after(picker);
+    // Store all files for picking
+    window._editImgFiles = files;
+    document.getElementById('edit-upload-area').style.display = 'none';
+  }
+};
+
+window.pickEditImg = (idx) => {
+  const files = window._editImgFiles;
+  if(!files || !files[idx]) return;
+  _editImgFile = files[idx];
+  // Highlight selected
+  files.forEach((_,i) => {
+    const el = document.getElementById(`edit-pick-${i}`);
+    if(el) el.style.borderColor = i===idx ? '#BB1919' : 'transparent';
+  });
+  // Show as main preview
+  document.getElementById('edit-img-src').src = URL.createObjectURL(_editImgFile);
+  document.getElementById('edit-img-src').style.display = 'block';
+  const brk = document.getElementById('edit-img-broken');
+  if(brk) brk.style.display='none';
   document.getElementById('edit-img-preview').style.display = 'block';
-  document.getElementById('edit-upload-area').style.display = 'none';
-  document.getElementById('edit-image').value = ''; // clear URL field — file takes priority
+  document.getElementById('edit-image').value = '';
+  showToast('Image selected — click Save Changes to upload it');
 };
 
 window.handleEditImgDrop = (e) => {
@@ -1793,20 +1861,22 @@ window.saveEdit = async () => {
   try {
     // If a new image file was selected, upload to Firebase Storage first
     if (_editImgFile) {
-      saveBtn.textContent = '⏳ Uploading image…';
-      const ext = _editImgFile.name.split('.').pop();
-      const storageRef = ref(storage, `articles/${id}_${Date.now()}.${ext}`);
-      await uploadBytes(storageRef, _editImgFile);
-      const downloadUrl = await getDownloadURL(storageRef);
-      updated.image = downloadUrl;
-      _editImgFile = null;
+      try {
+        const ext = 'jpg'; // always save as jpg after compression
+        const url = await uploadImageToStorage(
+          _editImgFile,
+          `articles/${id}_${Date.now()}.${ext}`,
+          (pct, msg) => { saveBtn.textContent = `⏳ ${msg}`; }
+        );
+        updated.image = url;
+        _editImgFile = null;
+      } catch(uploadErr) {
+        throw new Error('Image upload failed: ' + uploadErr.message);
+      }
     } else {
-      // Use the URL from the text field (or keep existing if blank)
       const urlField = document.getElementById('edit-image').value.trim();
       updated.image = urlField || articles.find(a=>a.id===id)?.image || '';
     }
-
-    // Remove the placeholder
     delete updated['__PENDING__'];
 
     saveBtn.textContent = '⏳ Saving…';
@@ -1822,11 +1892,76 @@ window.saveEdit = async () => {
   }
 };
 
+
+
+// ── IMAGE COMPRESS + UPLOAD via CLOUDINARY (free, no upgrade needed) ──
+// Cloudinary free tier: 25GB storage, 25GB bandwidth/month — plenty for a news site
+// Cloud name: updatebicholim  (create free account at cloudinary.com)
+const CLOUDINARY_CLOUD = 'dlhyg79xl';      // ← your cloud name
+const CLOUDINARY_PRESET = 'news_unsigned';       // ← your upload preset name
+
+async function compressImage(file, maxW=1400, quality=0.85) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let w=img.width, h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      const c=document.createElement('canvas');
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(b=>resolve(b||file),'image/jpeg',quality);
+    };
+    img.onerror=()=>resolve(file);
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+async function uploadImageToStorage(file, path, progressCb) {
+  progressCb && progressCb(0, 'Compressing image…');
+  const compressed = await compressImage(file);
+  const kb1=Math.round(file.size/1024), kb2=Math.round(compressed.size/1024);
+  progressCb && progressCb(15, `${kb1}KB → ${kb2}KB. Uploading…`);
+
+  const formData = new FormData();
+  formData.append('file', compressed);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  formData.append('folder', 'updatebicholim/articles');
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`);
+
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable){
+        const pct = Math.round(e.loaded/e.total*100);
+        progressCb && progressCb(15+Math.round(pct*0.8), `Uploading ${pct}%…`);
+      }
+    };
+
+    xhr.onload = () => {
+      if(xhr.status === 200){
+        const res = JSON.parse(xhr.responseText);
+        progressCb && progressCb(100, 'Done!');
+        // Use Cloudinary's auto-optimized URL
+        resolve(res.secure_url);
+      } else {
+        const err = JSON.parse(xhr.responseText);
+        reject(new Error(err.error?.message || 'Upload failed — check Cloudinary preset'));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.timeout = 60000;
+    xhr.ontimeout = () => reject(new Error('Upload timed out'));
+    xhr.send(formData);
+  });
+}
+
 </script>
 
 <!-- EDIT ARTICLE MODAL -->
-<div id="editModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s;">
-  <div style="background:#fff;width:100%;max-width:760px;border-radius:4px;overflow:hidden;">
+<div id="editModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s;">
+  <div style="background:#fff;width:100%;max-width:860px;border-radius:4px;overflow:hidden;margin:auto;">
     <div style="background:var(--black);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
       <h2 style="font-size:16px;font-weight:700;">✏️ Edit Article</h2>
       <button onclick="closeEditModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
@@ -1869,7 +2004,8 @@ window.saveEdit = async () => {
 
         <!-- Preview -->
         <div id="edit-img-preview" style="margin-bottom:10px;display:none;position:relative;">
-          <img id="edit-img-src" style="max-height:200px;width:100%;object-fit:cover;border:1px solid #eee;display:block;">
+          <img id="edit-img-src" style="max-height:200px;width:100%;object-fit:cover;border:1px solid #eee;display:block;" onerror="this.style.display='none';document.getElementById('edit-img-broken').style.display='block'">
+          <div id="edit-img-broken" style="display:none;padding:12px;background:#fff3cd;color:#856404;font-size:12px;font-family:var(--font);border:1px solid #ffc107;border-radius:2px;">⚠️ Current image URL is broken. Upload a new image or paste a working URL below.</div>
           <button onclick="clearEditImg()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;padding:3px 8px;font-size:11px;cursor:pointer;border-radius:2px;">✕ Remove</button>
         </div>
 
@@ -1879,10 +2015,10 @@ window.saveEdit = async () => {
           ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
           ondragleave="this.style.borderColor='var(--gray-300)'"
           ondrop="handleEditImgDrop(event)">
-          <input type="file" id="edit-img-input" accept="image/*" style="display:none" onchange="handleEditImgUpload(this)">
+          <input type="file" id="edit-img-input" accept="image/*" multiple style="display:none" onchange="handleEditImgUpload(this)">
           <div style="font-size:24px;margin-bottom:4px;">📷</div>
-          <div style="font-family:var(--font);font-size:12px;color:var(--gray-500);">Click or drag &amp; drop to upload image</div>
-          <div style="font-family:var(--font);font-size:11px;color:var(--gray-300);margin-top:2px;">JPG, PNG, WebP — max 5MB</div>
+          <div style="font-family:var(--font);font-size:12px;color:var(--gray-500);">Click or drag &amp; drop to upload image(s)</div>
+          <div style="font-family:var(--font);font-size:11px;color:var(--gray-300);margin-top:2px;">JPG, PNG, WebP — max 15MB · Select multiple to pick the best one</div>
         </div>
 
         <!-- OR paste URL -->
@@ -1898,11 +2034,11 @@ window.saveEdit = async () => {
       </div>
       <div class="form-group">
         <label class="form-label">Excerpt</label>
-        <textarea id="edit-excerpt" class="form-control" rows="2" placeholder="Short summary…"></textarea>
+        <textarea id="edit-excerpt" class="form-control" rows="3" placeholder="Short summary…" style="min-height:80px;resize:vertical;"></textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Full Article Body</label>
-        <textarea id="edit-body" class="form-control" rows="8" placeholder="Full article text…" style="font-size:13px;line-height:1.6;"></textarea>
+        <textarea id="edit-body" class="form-control" rows="10" placeholder="Full article text…" style="font-size:13px;line-height:1.6;min-height:200px;resize:vertical;"></textarea>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="form-group">
