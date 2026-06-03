@@ -1030,7 +1030,11 @@ function renderGallery() {
   const photos = siteData.gallery||[];
   const el     = document.getElementById('galSec');
   if (!photos.length) { el.innerHTML='<div class="empty-state"><div class="ei">🖼️</div>No gallery photos yet.</div>'; return; }
-  el.innerHTML = `<div class="gal-grid">${photos.slice(0,7).map(g=>`<div class="gal-item"><img src="${g.src}" alt="${g.caption||''}" loading="lazy"><div class="gal-ov">${g.caption||''}</div></div>`).join('')}</div>`;
+  el.innerHTML = `<div class="gallery-grid">${photos.slice(0,7).map(g=>`
+    <div class="gallery-item">
+      <img src="${g.src}" alt="${g.caption||''}" loading="lazy" onerror="this.parentElement.style.background='var(--gray-100)'">
+      <div class="gallery-overlay">${g.caption||''}</div>
+    </div>`).join('')}</div>`;
 }
 
 function renderOpinion() {
