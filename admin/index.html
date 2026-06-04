@@ -575,8 +575,83 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
   .card-body { padding: 14px; }
 }
 
-/* Edit Modal */
-#editModal.open { opacity:1 !important; pointer-events:all !important; }
+/* ── EDIT MODAL — clean mobile-first ── */
+#editModal {
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.5);
+  z-index:3000;
+}
+#editModal.open { display:block; }
+#editModalPanel {
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#fff;
+  z-index:3001;
+  border-radius:16px 16px 0 0;
+  max-height:92vh;
+  display:flex;
+  flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .3s ease;
+}
+#editModal.open ~ #editModalPanel,
+#editModalPanel.open {
+  transform:translateY(0);
+}
+#editModalHeader {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 18px;
+  background:var(--black);
+  border-radius:16px 16px 0 0;
+  flex-shrink:0;
+  position:sticky;top:0;
+}
+#editModalBody {
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:16px 16px 40px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  flex:1;
+}
+.em-field { display:flex; flex-direction:column; gap:5px; }
+.em-label { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#555; }
+.em-input { width:100%; border:1px solid #ddd; padding:10px 12px; font-family:var(--font); font-size:16px; border-radius:4px; outline:none; box-sizing:border-box; background:#fff; }
+.em-input:focus { border-color:var(--red); }
+select.em-input { height:44px; }
+textarea.em-input { resize:vertical; min-height:90px; line-height:1.5; }
+.em-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#edit-upload-area {
+  border:2px dashed #ddd;
+  border-radius:8px;
+  padding:20px;
+  text-align:center;
+  cursor:pointer;
+  background:#fafafa;
+  transition:border-color .2s;
+}
+@media(max-width:500px) {
+  .em-row { grid-template-columns:1fr; }
+}
+@desktop { /* above 600px show as centered modal instead of bottom sheet */
+}
+@media(min-width:600px){
+  #editModal.open { display:flex; align-items:flex-start; justify-content:center; padding:30px 20px; overflow-y:auto; }
+  #editModalPanel {
+    position:relative;
+    transform:none !important;
+    border-radius:8px;
+    max-height:none;
+    width:100%;
+    max-width:780px;
+    margin:auto;
+  }
+  #editModalHeader { border-radius:8px 8px 0 0; }
+}
 #editModal .form-control { width:100%; padding:8px 10px; border:1px solid var(--gray-300); font-family:var(--font); font-size:13px; border-radius:2px; outline:none; box-sizing:border-box; }
 #editModal .form-control:focus { border-color:var(--red); }
 #editModal select.form-control { height:36px; }
@@ -610,33 +685,27 @@ body { font-family: var(--font); background: var(--gray-50); color: var(--black)
   /* Card headers */
   .card-header { flex-direction:column; align-items:flex-start; gap:8px; }
   
-  /* Edit modal - slide up from bottom */
-  #editModal { 
-    padding:0 !important; 
-    align-items:flex-end !important; 
+  /* Edit modal - full scroll on mobile */
+  #editModal > div {
+    width:calc(100% - 24px) !important;
+    margin:12px auto 60px !important;
+    border-radius:12px !important;
   }
-  #editModal > div { 
-    border-radius:16px 16px 0 0 !important; 
-    max-height:95vh; 
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
+  #editModalBody {
+    padding:14px !important;
   }
-  #editModal > div > div:last-child { 
-    padding:16px 16px 32px !important; 
-  }
-  #editModal > div > div:last-child > div[style*="grid"] {
+  .edit-grid-2col {
     grid-template-columns:1fr !important;
   }
-  
-  /* Edit modal buttons */
-  #editModal .btn { 
-    padding:14px 12px !important; 
-    font-size:14px !important;
-    min-height:48px; /* better touch target */
+  #edit-btn-row {
+    flex-direction:column !important;
   }
-  
-  /* Upload area */
-  #edit-upload-area { padding:20px 12px; }
+  #edit-btn-row .btn {
+    width:100% !important;
+    justify-content:center !important;
+  }
+  #edit-upload-area { padding:16px 10px; }
+  #editModal .form-control { font-size:16px !important; }
 }
 
 @media(max-width:480px){
@@ -1799,9 +1868,9 @@ window.editArticle = (id) => {
     document.getElementById('edit-upload-area').style.display = 'block';
   }
 
-  const modal = document.getElementById('editModal');
-  modal.classList.add('open');
-  modal.scrollTop = 0; // scroll to top on open
+  document.getElementById('editModal').classList.add('open');
+  document.getElementById('editModalPanel').classList.add('open');
+  document.getElementById('editModalBody').scrollTop = 0;
   document.body.style.overflow = 'hidden';
 };
 
@@ -1894,6 +1963,7 @@ window.handleEditImgDrop = (e) => {
 
 window.closeEditModal = () => {
   document.getElementById('editModal').classList.remove('open');
+  document.getElementById('editModalPanel').classList.remove('open');
   document.body.style.overflow = '';
 };
 
@@ -1917,7 +1987,7 @@ window.saveEdit = async () => {
     status:    document.getElementById('edit-published').checked ? 'published' : 'draft',
   };
 
-  const saveBtn = document.querySelector('#editModal .btn-primary');
+  const saveBtn = document.getElementById('editSaveBtn');
   saveBtn.disabled = true;
   saveBtn.textContent = '⏳ Saving…';
 
@@ -2021,116 +2091,109 @@ async function uploadImageToStorage(file, path, progressCb) {
 </script>
 
 <!-- EDIT ARTICLE MODAL -->
-<div id="editModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s;">
-  <div style="background:#fff;width:100%;max-width:860px;border-radius:4px;overflow:hidden;margin:auto;">
-    <div style="background:var(--black);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
-      <h2 style="font-size:16px;font-weight:700;">✏️ Edit Article</h2>
-      <button onclick="closeEditModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">✕</button>
+<div id="editModal" onclick="if(event.target===this)closeEditModal()"></div>
+<div id="editModalPanel">
+  <div id="editModalHeader">
+    <span style="font-size:15px;font-weight:700;color:#fff;">✏️ Edit Article</span>
+    <button onclick="closeEditModal()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+  </div>
+  <div id="editModalBody">
+    <input type="hidden" id="edit-id">
+
+    <div class="em-field">
+      <label class="em-label">Headline *</label>
+      <input type="text" id="edit-title" class="em-input" placeholder="Article headline…" autocomplete="off">
     </div>
-    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
-      <input type="hidden" id="edit-id" autocomplete="off">
-      <div class="form-group">
-        <label class="form-label">Headline *</label>
-        <input type="text" id="edit-title" class="form-control" placeholder="Article headline…" autocomplete="off" inputmode="text">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="edit-grid-2col">
-        <div class="form-group">
-          <label class="form-label">Category *</label>
-          <select id="edit-category" class="form-control">
-            <option value="Politics">Politics</option>
-            <option value="Crime">Crime</option>
-            <option value="Development">Development</option>
-            <option value="Business">Business</option>
-            <option value="Sports">Sports</option>
-            <option value="Education">Education</option>
-            <option value="Environment">Environment</option>
-            <option value="Health">Health</option>
-            <option value="Opinion">Opinion</option>
-            <option value="India">India</option>
-            <option value="International">International</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Section</label>
-          <select id="edit-section" class="form-control">
-            <option value="Goa">Goa</option>
-            <option value="India">India</option>
-            <option value="International">International</option>
-            <option value="Sports">Sports</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Article Image</label>
 
-        <!-- Preview -->
-        <div id="edit-img-preview" style="margin-bottom:10px;display:none;position:relative;">
-          <img id="edit-img-src" style="max-height:200px;width:100%;object-fit:cover;border:1px solid #eee;display:block;" onerror="this.style.display='none';document.getElementById('edit-img-broken').style.display='block'">
-          <div id="edit-img-broken" style="display:none;padding:12px;background:#fff3cd;color:#856404;font-size:12px;font-family:var(--font);border:1px solid #ffc107;border-radius:2px;">⚠️ Current image URL is broken. Upload a new image or paste a working URL below.</div>
-          <button onclick="clearEditImg()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;padding:3px 8px;font-size:11px;cursor:pointer;border-radius:2px;">✕ Remove</button>
-        </div>
+    <div class="em-row">
+      <div class="em-field">
+        <label class="em-label">Category *</label>
+        <select id="edit-category" class="em-input">
+          <option value="Politics">Politics</option>
+          <option value="Crime">Crime</option>
+          <option value="Development">Development</option>
+          <option value="Business">Business</option>
+          <option value="Sports">Sports</option>
+          <option value="Education">Education</option>
+          <option value="Environment">Environment</option>
+          <option value="Health">Health</option>
+          <option value="Opinion">Opinion</option>
+          <option value="India">India</option>
+          <option value="International">International</option>
+        </select>
+      </div>
+      <div class="em-field">
+        <label class="em-label">Section</label>
+        <select id="edit-section" class="em-input">
+          <option value="Goa">Goa</option>
+          <option value="India">India</option>
+          <option value="International">International</option>
+          <option value="Sports">Sports</option>
+        </select>
+      </div>
+    </div>
 
-        <!-- Upload from device -->
-        <div id="edit-upload-area" style="border:2px dashed var(--gray-300);border-radius:3px;padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;transition:border-color .2s;"
-          onclick="document.getElementById('edit-img-input').click()"
-          ondragover="event.preventDefault();this.style.borderColor='var(--red)'"
-          ondragleave="this.style.borderColor='var(--gray-300)'"
-          ondrop="handleEditImgDrop(event)">
-          <input type="file" id="edit-img-input" accept="image/*" multiple style="display:none" onchange="handleEditImgUpload(this)">
-          <div style="font-size:24px;margin-bottom:4px;">📷</div>
-          <div style="font-family:var(--font);font-size:12px;color:var(--gray-500);">Click or drag &amp; drop to upload image(s)</div>
-          <div style="font-family:var(--font);font-size:11px;color:var(--gray-300);margin-top:2px;">JPG, PNG, WebP — max 15MB · Select multiple to pick the best one</div>
-        </div>
+    <div class="em-field">
+      <label class="em-label">Article Image</label>
+      <div id="edit-img-preview" style="display:none;margin-bottom:10px;position:relative;">
+        <img id="edit-img-src" style="width:100%;max-height:180px;object-fit:cover;display:block;border-radius:4px;" onerror="this.style.display='none';document.getElementById('edit-img-broken').style.display='block'">
+        <div id="edit-img-broken" style="display:none;padding:10px;background:#fff3cd;color:#856404;font-size:12px;border-radius:4px;margin-top:4px;">⚠️ Current image broken. Upload new or paste URL.</div>
+        <button onclick="clearEditImg()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;padding:4px 10px;font-size:12px;cursor:pointer;border-radius:4px;">✕ Remove</button>
+      </div>
+      <div id="edit-upload-area" onclick="document.getElementById('edit-img-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--red)'" ondragleave="this.style.borderColor='#ddd'" ondrop="handleEditImgDrop(event)">
+        <input type="file" id="edit-img-input" accept="image/*" multiple style="display:none" onchange="handleEditImgUpload(this)">
+        <div style="font-size:28px;margin-bottom:6px;">📷</div>
+        <div style="font-size:13px;font-weight:600;color:#555;">Tap to upload image</div>
+        <div style="font-size:11px;color:#999;margin-top:3px;">JPG, PNG, WebP · max 15MB</div>
+      </div>
+      <div id="edit-img-picker"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+        <div style="flex:1;height:1px;background:#eee;"></div>
+        <span style="font-size:11px;color:#aaa;">or paste URL</span>
+        <div style="flex:1;height:1px;background:#eee;"></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="edit-image" class="em-input" placeholder="https://…" style="flex:1;" oninput="if(this.value)previewEditImg()">
+        <button onclick="previewEditImg()" style="background:#f0f0f0;border:1px solid #ddd;padding:0 14px;cursor:pointer;border-radius:4px;font-size:12px;white-space:nowrap;">Preview</button>
+      </div>
+    </div>
 
-        <!-- OR paste URL -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
-          <span style="font-family:var(--font);font-size:11px;color:var(--gray-400);">or paste URL</span>
-          <div style="flex:1;height:1px;background:var(--gray-200);"></div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="edit-image" class="form-control" placeholder="https://example.com/image.jpg" style="flex:1;" oninput="if(this.value)previewEditImg()">
-          <button onclick="previewEditImg()" style="background:var(--gray-100);border:1px solid var(--gray-300);padding:0 12px;font-size:12px;cursor:pointer;border-radius:2px;white-space:nowrap;">Preview</button>
-        </div>
+    <div class="em-field">
+      <label class="em-label">Excerpt</label>
+      <textarea id="edit-excerpt" class="em-input" rows="3" placeholder="Short summary shown on cards…"></textarea>
+    </div>
+
+    <div class="em-field">
+      <label class="em-label">Full Article Body</label>
+      <textarea id="edit-body" class="em-input" rows="8" placeholder="Full article text…"></textarea>
+    </div>
+
+    <div class="em-row">
+      <div class="em-field">
+        <label class="em-label">Author</label>
+        <input type="text" id="edit-author" class="em-input" placeholder="Staff Reporter">
       </div>
-      <div class="form-group">
-        <label class="form-label">Excerpt</label>
-        <textarea id="edit-excerpt" class="form-control" rows="3" placeholder="Short summary…" style="min-height:80px;resize:vertical;"></textarea>
+      <div class="em-field">
+        <label class="em-label">Location</label>
+        <input type="text" id="edit-location" class="em-input" placeholder="Bicholim, Goa">
       </div>
-      <div class="form-group">
-        <label class="form-label">Full Article Body</label>
-        <textarea id="edit-body" class="form-control" rows="10" placeholder="Full article text…" style="font-size:13px;line-height:1.6;min-height:200px;resize:vertical;"></textarea>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="edit-grid-2col">
-        <div class="form-group">
-          <label class="form-label">Author</label>
-          <input type="text" id="edit-author" class="form-control" placeholder="Staff Reporter">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Location</label>
-          <input type="text" id="edit-location" class="form-control" placeholder="Bicholim, Goa">
-        </div>
-      </div>
-      <div style="display:flex;gap:20px;align-items:center;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-          <input type="checkbox" id="edit-breaking"> 🔴 Breaking News
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-          <input type="checkbox" id="edit-hero"> ⭐ Hero / Featured
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-          <input type="checkbox" id="edit-published"> 🟢 Published
-        </label>
-      </div>
-      <div style="display:flex;gap:10px;padding-top:8px;border-top:1px solid #eee;" id="edit-btn-row">
-        <button onclick="saveEdit()" class="btn btn-primary" style="flex:1;">💾 Save Changes</button>
-        <button onclick="closeEditModal()" class="btn" style="background:#f0f0f0;color:#333;">Cancel</button>
-      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:18px;padding:4px 0;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="edit-breaking" style="width:18px;height:18px;cursor:pointer;"> 🔴 Breaking
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="edit-hero" style="width:18px;height:18px;cursor:pointer;"> ⭐ Featured
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="edit-published" style="width:18px;height:18px;cursor:pointer;"> 🟢 Published
+      </label>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid #eee;">
+      <button onclick="saveEdit()" class="btn btn-primary" id="editSaveBtn" style="width:100%;padding:14px;font-size:15px;justify-content:center;">💾 Save Changes</button>
+      <button onclick="closeEditModal()" style="width:100%;padding:12px;background:#f0f0f0;border:none;cursor:pointer;border-radius:4px;font-size:14px;font-weight:600;">Cancel</button>
     </div>
   </div>
-</div>
-
-
-
-</body>
-</html>
+</div>>
